@@ -22,8 +22,37 @@ export interface Aluno extends Usuario {
   objetivo: string;
    nomesCheckIn?: string[];
   profileImage?: string;
+  nivelAtual: 'iniciante' | 'intermediario' | 'avancado';
+  dataNivelAtual?: string; // Quando foi promovido para este nível
+  proximaAvaliacaoNivel?: string; // Data sugerida para próxima avaliação
+  statusAvaliacaoNivel?: 'sem_avaliacao' | 'avaliacao_pendente' | 'aprovado' | 'reprovado';
+  observacoesNivel?: string; // Comentários do professor/gestor sobre o nível
 }
-
+export interface AvaliacaoNivel {
+  id: number;
+  alunoId: number;
+  aluno: string;
+  nivelAnterior: 'iniciante' | 'intermediario' | 'avancado';
+  nivelNovo: 'iniciante' | 'intermediario' | 'avancado';
+  aprovado: boolean; // true = promovido, false = mantém nível atual
+  avaliadoPorId: number;
+  avaliadoPor: string; // Nome do professor/gestor
+  perfilAvaliador: 'professor' | 'gestor' | 'admin';
+  dataAvaliacao: string;
+  criteriosAvaliados: {
+    tecnica: number; // 0-10
+    tatica: number; // 0-10
+    fisico: number; // 0-10
+    atitude: number; // 0-10
+    frequencia: number; // 0-10
+  };
+  pontosFracos: string[];
+  pontosFortes: string[];
+  recomendacoes: string;
+  observacoes?: string;
+  proximaAvaliacaoSugerida?: string; // Data sugerida
+  unidade: string;
+}
 export interface Professor extends Usuario {
   tipoPagamento: 'fixo' | 'horas-variaveis' | 'hora-fixa';
   valorFixo?: number;
@@ -137,8 +166,9 @@ export interface AutoAvaliacao {
 export interface EstatisticaAluno {
   alunoId: number;
   nivelAtual: 'iniciante' | 'intermediario' | 'avancado';
-  progressoNivel: number; // 0-100
-  treinosParaProximoNivel: number;
+statusAvaliacaoNivel: 'sem_avaliacao' | 'avaliacao_pendente' | 'aprovado' | 'reprovado';
+  proximaAvaliacaoNivel?: string;
+  ultimaAvaliacaoNivel?: string;
   tempoNivelAtual: number; // dias
   inicioNivelAtual: string;
   
@@ -448,6 +478,7 @@ export interface MockData {
   metasGerais: MetaGeral[];
   alugueis: Aluguel[];
   agendamentos: Agendamento[];
+   avaliacoesNivel: AvaliacaoNivel[];
   treinos: Treino[];
   exercicios: Exercicio[];
   torneios: Torneio[];
@@ -585,7 +616,7 @@ export interface Torneio {
 }
 
 // Export utility types
-export type TabKeys = 'dashboard' | 'alunos' | 'professores' | 'gestores' | 'presencas' | 'agendamentos' | 'aulas-experimentais' | 'treinos' | 'planos' | 'unidades' | 'financeiro' | 'produtos' | 'alugueis' | 'configuracoes' | 'metas' | 'torneios' | 'horas-professores' | 'meu-perfil' | 'financeiro-aluno' | 'evolucao';
+export type TabKeys = 'dashboard' | 'alunos' | 'professores' | 'gestores' | 'presencas' | 'agendamentos' | 'aulas-experimentais' | 'treinos' | 'planos' | 'unidades' | 'financeiro' | 'produtos' | 'alugueis' | 'configuracoes' | 'metas' | 'torneios' | 'horas-professores' | 'meu-perfil' | 'financeiro-aluno' | 'evolucao' | 'avaliacao-nivel';
 
 export interface Tab {
   key: TabKeys;

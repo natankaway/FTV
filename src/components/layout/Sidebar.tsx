@@ -15,6 +15,7 @@ CreditCard,
   ChevronDown,
   TrendingUp,
   X,
+  Award,
   Trophy,
   GraduationCap,
   Clock
@@ -160,7 +161,13 @@ if (userRole === 'aluno') {
       label: userRole === 'professor' ? 'Minhas Horas' : 'Horas Professores', 
       icon: Clock, 
       roles: ['admin', 'gestor', 'professor'] 
-    } // ← ADICIONAR ESTAS LINHAS
+    }, // ← ADICIONAR ESTAS LINHAS
+	{ 
+      id: 'avaliacao-nivel' as TabKeys, 
+      label: 'Avaliação de Nível', 
+      icon: Award, 
+      roles: ['professor', 'gestor', 'admin'] 
+    }
   ];
   
   sections.push({

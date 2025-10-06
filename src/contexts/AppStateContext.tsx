@@ -114,6 +114,10 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
  const [conquistas, setConquistas] = useLocalStorage<Conquista[]>('conquistas', mockData.conquistas);
 const [objetivosPessoais, setObjetivosPessoais] = useLocalStorage<ObjetivoPessoal[]>('objetivosPessoais', mockData.objetivosPessoais);
 const [autoAvaliacoes, setAutoAvaliacoes] = useLocalStorage<AutoAvaliacao[]>('autoAvaliacoes', mockData.autoAvaliacoes);
+const [avaliacoesNivel, setAvaliacoesNivel] = useLocalStorage<AvaliacaoNivel[]>(
+  'avaliacoesNivel', 
+  mockData.avaliacoesNivel
+);
 const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaAluno[]>('estatisticasAlunos', mockData.estatisticasAlunos);
  const [configCT, setConfigCT] = useLocalStorage<ConfigCT>('configCT', mockData.configCT);
 
@@ -207,6 +211,7 @@ const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaA
 	 conquistas,
     objetivosPessoais,
     autoAvaliacoes,
+	avaliacoesNivel,
     estatisticasAlunos,
     
     // Setters
@@ -218,6 +223,7 @@ const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaA
     setPlanos,
     setProdutos,
     setPlataformas,
+	setAvaliacoesNivel,
     setPresencas,
     setHorarios,
     setMetas,

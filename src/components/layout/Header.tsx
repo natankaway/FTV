@@ -48,6 +48,7 @@ const getPageTitle = useCallback(() => {
 	'meu-perfil': 'Meu Perfil',
 	'financeiro-aluno': 'Meu Financeiro',
 	'evolucao': 'Minha Evolução',
+	'avaliacao-nivel': 'Avaliação de Nível', // ← ADICIONAR
     produtos: 'Produtos',
     financeiro: 'Financeiro',
     unidades: 'Unidades',

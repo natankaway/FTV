@@ -380,6 +380,60 @@ const estatisticasAlunosMock: EstatisticaAluno[] = [
     }
   }
 ];
+
+
+const avaliacoesNivelMock: AvaliacaoNivel[] = [
+  {
+    id: 1,
+    alunoId: 2,
+    aluno: 'Maria Santos',
+    nivelAnterior: 'iniciante',
+    nivelNovo: 'intermediario',
+    aprovado: true,
+    avaliadoPorId: 1,
+    avaliadoPor: 'Prof. Carlos Mendes',
+    perfilAvaliador: 'professor',
+    dataAvaliacao: '2025-06-01',
+    criteriosAvaliados: {
+      tecnica: 8,
+      tatica: 8,
+      fisico: 9,
+      atitude: 9,
+      frequencia: 9
+    },
+    pontosFortes: ['Excelente manchete', 'Boa comunicação em dupla', 'Muito dedicada'],
+    pontosFracos: ['Precisa melhorar saque'],
+    recomendacoes: 'Continue praticando o saque em suspensão',
+    observacoes: 'Aluna muito comprometida, evolução rápida',
+    proximaAvaliacaoSugerida: '2025-12-01',
+    unidade: 'Zona Sul'
+  },
+  {
+    id: 2,
+    alunoId: 1,
+    aluno: 'João Silva',
+    nivelAnterior: 'iniciante',
+    nivelNovo: 'intermediario',
+    aprovado: true,
+    avaliadoPorId: 1,
+    avaliadoPor: 'Prof. Carlos Mendes',
+    perfilAvaliador: 'professor',
+    dataAvaliacao: '2024-03-01',
+    criteriosAvaliados: {
+      tecnica: 7,
+      tatica: 8,
+      fisico: 8,
+      atitude: 9,
+      frequencia: 9
+    },
+    pontosFortes: ['Saque potente', 'Boa leitura de jogo'],
+    pontosFracos: ['Posicionamento defensivo'],
+    recomendacoes: 'Trabalhar mais a defesa e bloqueio',
+    observacoes: 'Progresso consistente',
+    proximaAvaliacaoSugerida: '2025-08-15',
+    unidade: 'Centro'
+  }
+];
 export const mockData: MockData = {
   planos: [
     // Unidade Centro
@@ -417,10 +471,12 @@ alunos: [
     status: 'ativo', 
     vencimento: '2025-07-15', 
     senha: '123456', 
-    nivel: 'intermediario', 
-    dataMatricula: '2024-01-15', 
-    objetivo: 'Competição',
-    ativo: true 
+
+	 nivelAtual: 'intermediario',
+    dataNivelAtual: '2024-03-01',
+    proximaAvaliacaoNivel: '2025-08-15',
+    statusAvaliacaoNivel: 'aprovado',
+    observacoesNivel: 'Progresso consistente. Continue assim!'
   },
   { 
     id: 2, 
@@ -871,6 +927,7 @@ professores: [
   aulasExperimentais: aulasExperimentaisMock,
   registrosHorasProfessores: registrosHorasProfessoresMock, // ← ADICIONAR ESTA LINHA
 conquistas: conquistasMock,
+avaliacoesNivel: avaliacoesNivelMock,
   objetivosPessoais: objetivosPessoaisMock,
   autoAvaliacoes: autoAvaliacoesMock,
   estatisticasAlunos: estatisticasAlunosMock,
