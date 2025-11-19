@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+@layer utilities {
+  .menu-barra-bonita {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .menu-barra-bonita::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .menu-barra-bonita::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .menu-barra-bonita::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+  }
+
+  .menu-barra-bonita::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+}
+
+/* CSS Variables for theming */
+:root {
+  --toast-bg: #333;
+  --toast-color: #fff;
+}
+
+.dark {
+  --toast-bg: #1f2937;
+  --toast-color: #f3f4f6;
+}
