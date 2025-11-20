@@ -8,12 +8,15 @@ export const listarPlanos = async (req, res) => {
       .select('*')
       .order('valor', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro Supabase ao listar planos:', error);
+      throw error;
+    }
 
     res.json({ planos });
   } catch (error) {
-    console.error('Erro ao listar planos:', error);
-    res.status(500).json({ error: 'Erro ao listar planos' });
+    console.error('Erro ao listar planos:', error.message, error.details);
+    res.status(500).json({ error: 'Erro ao listar planos', details: error.message });
   }
 };
 
