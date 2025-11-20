@@ -2,6 +2,7 @@ import React, { useState, useCallback, memo } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTheme, useAppState, useNotifications } from '@/contexts';
 import { Input, Button } from '@/components/common';
+import { authService } from '@/services/authService';
 import type { User } from '@/types';
 
 interface LoginData {
@@ -43,106 +44,47 @@ export const LoginModal: React.FC = memo(() => {
 
   const handleLogin = useCallback(async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
-    // Simular delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     try {
       const { email, senha } = loginData;
 
-      // Admin login
-      if (email === 'admin@ct.com' && senha === 'admin123') {
-        const adminUser: User = { 
-          id: 0, 
-          nome: 'Administrador', 
-          email, 
-          perfil: 'admin'
-        };
-        setUserLogado(adminUser);
-        addNotification({
-          type: 'success',
-          title: 'Login realizado',
-          message: 'Bem-vindo, Administrador!'
-        });
-        return;
-      }
+      // Chamar API real
+      const response = await authService.login({ email, senha });
 
-      // Professor login
-      const professor = dadosMockados.professores.find(p => p.email === email && p.senha === senha);
-      if (professor) {
-        const professorUser: User = {
-          id: professor.id,
-          nome: professor.nome,
-          email: professor.email,
-          perfil: 'professor'
-        };
-        setUserLogado(professorUser);
-        addNotification({
-          type: 'success',
-          title: 'Login realizado',
-          message: `Bem-vindo, Prof. ${professor.nome}!`
-        });
-        return;
-      }
+      // Criar objeto User a partir da resposta
+      const user: User = {
+        id: response.usuario.id,
+        nome: response.usuario.nome,
+        email: response.usuario.email,
+        perfil: response.usuario.perfil,
+        unidade: response.dadosAdicionais?.unidade_id,
+        unidades: response.dadosAdicionais?.unidades
+      };
 
-      // Gestor login
-      const gestor = dadosMockados.gestores.find(g => g.email === email && g.senha === senha && g.ativo);
-      if (gestor) {
-        const gestorUser: User = {
-          id: gestor.id,
-          nome: gestor.nome,
-          email: gestor.email,
-          perfil: 'gestor',
-          unidades: gestor.unidades
-        };
-        setUserLogado(gestorUser);
-        addNotification({
-          type: 'success',
-          title: 'Login realizado',
-          message: `Bem-vindo, ${gestor.nome}!`
-        });
-        return;
-      }
+      setUserLogado(user);
 
-      // Aluno login
-      const aluno = dadosMockados.alunos.find(a => a.email === email && a.senha === senha);
-      if (aluno) {
-        const alunoUser: User = {
-          id: aluno.id,
-          nome: aluno.nome,
-          email: aluno.email,
-          perfil: 'aluno',
-          unidade: aluno.unidade
-        };
-        setUserLogado(alunoUser);
-        addNotification({
-          type: 'success',
-          title: 'Login realizado',
-          message: `Bem-vindo, ${aluno.nome}!`
-        });
-        return;
-      }
-
-      // Login failed
-      setErrors({ email: 'Email ou senha incorretos' });
       addNotification({
-        type: 'error',
-        title: 'Erro no login',
-        message: 'Credenciais inválidas'
+        type: 'success',
+        title: 'Login realizado',
+        message: `Bem-vindo, ${user.nome}!`
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no login:', error);
+
+      const errorMessage = error.response?.data?.message || error.message || 'Credenciais inválidas';
+
+      setErrors({ email: errorMessage });
       addNotification({
         type: 'error',
         title: 'Erro no login',
-        message: 'Ocorreu um erro inesperado'
+        message: errorMessage
       });
     } finally {
       setLoading(false);
     }
-  }, [validateForm, loginData, setUserLogado, dadosMockados, addNotification]);
+  }, [validateForm, loginData, setUserLogado, addNotification]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -228,13 +170,13 @@ export const LoginModal: React.FC = memo(() => {
           </p>
           <div className="space-y-1 text-xs">
             <p className={isDarkMode ? 'text-gray-300' : 'text-gray-500'}>
-              <strong>Admin:</strong> admin@ct.com / admin123
+              <strong>Admin:</strong> admin@ftv.com / 123456
             </p>
             <p className={isDarkMode ? 'text-gray-300' : 'text-gray-500'}>
-              <strong>Professor:</strong> carlos@email.com / 123456
+              <strong>Professor:</strong> professor@ftv.com / 123456
             </p>
             <p className={isDarkMode ? 'text-gray-300' : 'text-gray-500'}>
-              <strong>Aluno:</strong> joao@email.com / 123456
+              <strong>Aluno:</strong> aluno@ftv.com / 123456
             </p>
           </div>
         </div>
