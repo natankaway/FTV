@@ -90,16 +90,16 @@ interface AppStateProviderProps {
 }
 
 export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) => {
-  // Persistent state with localStorage
-  const [alunos, setAlunos] = useLocalStorage<Aluno[]>('alunos', mockData.alunos);
-  const [professores, setProfessores] = useLocalStorage<Professor[]>('professores', mockData.professores);
-  const [gestores, setGestores] = useLocalStorage<Gestor[]>('gestores', mockData.gestores);
-  const [financeiro, setFinanceiro] = useLocalStorage<RegistroFinanceiro[]>('financeiro', mockData.financeiro);
-  const [unidades, setUnidades] = useLocalStorage<Unidade[]>('unidades', mockData.unidades);
-  const [planos, setPlanos] = useLocalStorage<Plano[]>('planos', mockData.planos);
-  const [produtos, setProdutos] = useLocalStorage<Produto[]>('produtos', mockData.produtos);
+  // Persistent state with localStorage (inicializados vazios - dados virão da API)
+  const [alunos, setAlunos] = useLocalStorage<Aluno[]>('alunos', []);
+  const [professores, setProfessores] = useLocalStorage<Professor[]>('professores', []);
+  const [gestores, setGestores] = useLocalStorage<Gestor[]>('gestores', []);
+  const [financeiro, setFinanceiro] = useLocalStorage<RegistroFinanceiro[]>('financeiro', []);
+  const [unidades, setUnidades] = useLocalStorage<Unidade[]>('unidades', []);
+  const [planos, setPlanos] = useLocalStorage<Plano[]>('planos', []);
+  const [produtos, setProdutos] = useLocalStorage<Produto[]>('produtos', []);
   const [plataformas, setPlataformas] = useLocalStorage<Plataforma[]>('plataformas', mockData.plataformas);
-  const [presencas, setPresencas] = useLocalStorage<Presenca[]>('presencas', mockData.presencas);
+  const [presencas, setPresencas] = useLocalStorage<Presenca[]>('presencas', []);
   const [horarios, setHorarios] = useLocalStorage<Horario[]>('horarios', mockData.horarios);
   const [metas, setMetas] = useLocalStorage<Meta[]>('metas', mockData.metas);
   const [metasGerais, setMetasGerais] = useLocalStorage<MetaGeral[]>('metasGerais', mockData.metasGerais);
@@ -115,7 +115,7 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
 const [objetivosPessoais, setObjetivosPessoais] = useLocalStorage<ObjetivoPessoal[]>('objetivosPessoais', mockData.objetivosPessoais);
 const [autoAvaliacoes, setAutoAvaliacoes] = useLocalStorage<AutoAvaliacao[]>('autoAvaliacoes', mockData.autoAvaliacoes);
 const [avaliacoesNivel, setAvaliacoesNivel] = useLocalStorage<AvaliacaoNivel[]>(
-  'avaliacoesNivel', 
+  'avaliacoesNivel',
   mockData.avaliacoesNivel
 );
 const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaAluno[]>('estatisticasAlunos', mockData.estatisticasAlunos);

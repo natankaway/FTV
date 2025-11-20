@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useAppState } from '@/contexts';
+import { useLoadData } from '@/hooks';
 import { LoginModal } from '@/components/forms/LoginModal';
 import { Sidebar, Header } from '@/components/layout';
 import { MainDashboard } from '@/components/dashboard';
@@ -27,6 +28,9 @@ export const MainApp: React.FC = () => {
   const { userLogado, activeTab } = useAppState();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Carrega dados da API quando o usuário faz login
+  useLoadData();
 
   const toggleMobileSidebar = useCallback(() => {
     setIsMobileSidebarOpen(prev => !prev);
