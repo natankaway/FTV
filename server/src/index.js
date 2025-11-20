@@ -12,6 +12,12 @@ import { errorHandler, notFound } from './middleware/errorHandler.js';
 // Importar rotas
 import authRoutes from './routes/authRoutes.js';
 import alunosRoutes from './routes/alunosRoutes.js';
+import professoresRoutes from './routes/professoresRoutes.js';
+import unidadesRoutes from './routes/unidadesRoutes.js';
+import planosRoutes from './routes/planosRoutes.js';
+import produtosRoutes from './routes/produtosRoutes.js';
+import presencasRoutes from './routes/presencasRoutes.js';
+import financeiroRoutes from './routes/financeiroRoutes.js';
 
 // Configuração
 dotenv.config();
@@ -56,12 +62,12 @@ app.get('/health', (req, res) => {
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/alunos', alunosRoutes);
-
-// Adicione mais rotas conforme necessário
-// app.use('/api/professores', professoresRoutes);
-// app.use('/api/presencas', presencasRoutes);
-// app.use('/api/treinos', treinosRoutes);
-// etc...
+app.use('/api/professores', professoresRoutes);
+app.use('/api/unidades', unidadesRoutes);
+app.use('/api/planos', planosRoutes);
+app.use('/api/produtos', produtosRoutes);
+app.use('/api/presencas', presencasRoutes);
+app.use('/api/financeiro', financeiroRoutes);
 
 // Middleware de erro 404
 app.use(notFound);
@@ -80,12 +86,16 @@ if (process.env.NODE_ENV !== 'test') {
 ║   Ambiente: ${process.env.NODE_ENV || 'development'}              ║
 ║   URL: http://localhost:${PORT}         ║
 ║                                       ║
-║   Endpoints disponíveis:              ║
-║   - GET  /health                      ║
-║   - POST /api/auth/login              ║
-║   - POST /api/auth/refresh            ║
-║   - GET  /api/alunos                  ║
-║                                       ║
+║   Rotas disponíveis:                  ║
+║   - /health                           ║
+║   - /api/auth/*                       ║
+║   - /api/alunos/*                     ║
+║   - /api/professores/*                ║
+║   - /api/unidades/*                   ║
+║   - /api/planos/*                     ║
+║   - /api/produtos/*                   ║
+║   - /api/presencas/*                  ║
+║   - /api/financeiro/*                 ║
 ╚═══════════════════════════════════════╝
     `);
   });
