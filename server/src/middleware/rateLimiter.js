@@ -1,19 +1,26 @@
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 // Rate limiter para requisições gerais
 const rateLimiter = new RateLimiterMemory({
-  points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS) / 1000 || 900, // 15 minutos
+  points: isDevelopment ? 1000 : (parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100),
+  duration: isDevelopment ? 60 : (parseInt(process.env.RATE_LIMIT_WINDOW_MS) / 1000 || 900),
 });
 
 // Rate limiter mais restritivo para login
 const loginRateLimiter = new RateLimiterMemory({
-  points: 5, // 5 tentativas
-  duration: 900, // por 15 minutos
-  blockDuration: 900, // bloquear por 15 minutos após exceder
+  points: isDevelopment ? 50 : 5,
+  duration: isDevelopment ? 60 : 900,
+  blockDuration: isDevelopment ? 60 : 900,
 });
 
 export const rateLimiterMiddleware = async (req, res, next) => {
+  // Desabilitar rate limiting em desenvolvimento
+  if (isDevelopment) {
+    return next();
+  }
+
   try {
     const key = req.ip || req.connection.remoteAddress;
     await rateLimiter.consume(key);

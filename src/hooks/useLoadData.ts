@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAppState } from '@/contexts';
 import {
   alunosService,
@@ -25,11 +25,28 @@ export const useLoadData = () => {
     setFinanceiro
   } = useAppState();
 
+  const isLoadingRef = useRef(false);
+  const hasLoadedRef = useRef(false);
+
   const loadAllData = useCallback(async () => {
     if (!userLogado) {
       console.log('[useLoadData] Usuário não autenticado, pulando carregamento de dados');
       return;
     }
+
+    // Evitar múltiplas chamadas simultâneas
+    if (isLoadingRef.current) {
+      console.log('[useLoadData] Já está carregando, pulando...');
+      return;
+    }
+
+    // Carregar apenas uma vez por sessão
+    if (hasLoadedRef.current) {
+      console.log('[useLoadData] Dados já foram carregados nesta sessão');
+      return;
+    }
+
+    isLoadingRef.current = true;
 
     try {
       console.log('[useLoadData] Iniciando carregamento de dados da API...');
@@ -104,8 +121,11 @@ export const useLoadData = () => {
       }
 
       console.log('[useLoadData] Carregamento concluído!');
+      hasLoadedRef.current = true;
     } catch (error) {
       console.error('[useLoadData] Erro ao carregar dados:', error);
+    } finally {
+      isLoadingRef.current = false;
     }
   }, [
     userLogado,
@@ -120,7 +140,7 @@ export const useLoadData = () => {
 
   // Carregar dados quando o usuário fizer login
   useEffect(() => {
-    if (userLogado) {
+    if (userLogado && !hasLoadedRef.current) {
       loadAllData();
     }
   }, [userLogado, loadAllData]);
