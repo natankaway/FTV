@@ -6,7 +6,7 @@ export const listarTransacoes = async (req, res) => {
     const { tipo, data_inicio, data_fim, unidade_id, aluno_id, status } = req.query;
 
     let query = supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .select('*, aluno:alunos(nome), unidade:unidades(nome)')
       .order('data', { ascending: false });
 
@@ -51,7 +51,7 @@ export const buscarTransacao = async (req, res) => {
     const { id } = req.params;
 
     const { data: transacao, error } = await supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .select('*, aluno:alunos(nome), unidade:unidades(nome)')
       .eq('id', id)
       .single();
@@ -75,7 +75,7 @@ export const obterResumo = async (req, res) => {
     const { data_inicio, data_fim } = req.query;
 
     let query = supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .select('tipo, valor, status');
 
     if (data_inicio) {
@@ -116,7 +116,7 @@ export const criarTransacao = async (req, res) => {
     const transacaoData = req.body;
 
     const { data: transacao, error } = await supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .insert([transacaoData])
       .select()
       .single();
@@ -137,7 +137,7 @@ export const atualizarTransacao = async (req, res) => {
     const updateData = req.body;
 
     const { data: transacao, error } = await supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -158,7 +158,7 @@ export const deletarTransacao = async (req, res) => {
     const { id } = req.params;
 
     const { error } = await supabaseAdmin
-      .from('transacoes_financeiras')
+      .from('registros_financeiros')
       .delete()
       .eq('id', id);
 
