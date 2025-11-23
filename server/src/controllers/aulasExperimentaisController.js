@@ -5,7 +5,7 @@ export const listarAulasExperimentais = async (req, res) => {
     const { data: aulasExperimentais, error } = await supabaseAdmin
       .from('aulas_experimentais')
       .select('*')
-      .order('data', { ascending: false });
+      .order('data_agendamento', { ascending: false });
     if (error) throw error;
     res.json({ aulasExperimentais });
   } catch (error) {
