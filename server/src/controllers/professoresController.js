@@ -5,12 +5,26 @@ export const listarProfessores = async (req, res) => {
   try {
     const { data: professores, error } = await supabaseAdmin
       .from('professores')
-      .select('*')
+      .select(`
+        *,
+        usuario:usuarios(nome, email, telefone, ativo),
+        unidade_principal:unidades(nome)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    res.json({ professores });
+    // Transformar dados para achatar a estrutura do usuario
+    const professoresTransformados = professores.map(professor => ({
+      ...professor,
+      nome: professor.usuario?.nome || '',
+      email: professor.usuario?.email || '',
+      telefone: professor.usuario?.telefone || '',
+      ativo: professor.usuario?.ativo ?? true,
+      unidade: professor.unidade_principal?.nome || ''
+    }));
+
+    res.json({ professores: professoresTransformados });
   } catch (error) {
     console.error('Erro ao listar professores:', error);
     res.status(500).json({ error: 'Erro ao listar professores' });
