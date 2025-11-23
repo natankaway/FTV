@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks';
-import { mockData } from '@/data/mockData';
+// mockData removido - dados agora vêm da API Supabase
 import type { 
   AppState, 
   User, 
@@ -98,28 +98,25 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
   const [unidades, setUnidades] = useLocalStorage<Unidade[]>('unidades', []);
   const [planos, setPlanos] = useLocalStorage<Plano[]>('planos', []);
   const [produtos, setProdutos] = useLocalStorage<Produto[]>('produtos', []);
-  const [plataformas, setPlataformas] = useLocalStorage<Plataforma[]>('plataformas', mockData.plataformas);
+  const [plataformas, setPlataformas] = useLocalStorage<Plataforma[]>('plataformas', []);
   const [presencas, setPresencas] = useLocalStorage<Presenca[]>('presencas', []);
-  const [horarios, setHorarios] = useLocalStorage<Horario[]>('horarios', mockData.horarios);
-  const [metas, setMetas] = useLocalStorage<Meta[]>('metas', mockData.metas);
-  const [metasGerais, setMetasGerais] = useLocalStorage<MetaGeral[]>('metasGerais', mockData.metasGerais);
-  const [alugueis, setAlugueis] = useLocalStorage<Aluguel[]>('alugueis', mockData.alugueis);
-  const [agendamentos, setAgendamentos] = useLocalStorage<Agendamento[]>('agendamentos', mockData.agendamentos);
-  const [treinos, setTreinos] = useLocalStorage<Treino[]>('treinos', mockData.treinos);
-  const [exercicios, setExercicios] = useLocalStorage<Exercicio[]>('exercicios', mockData.exercicios);
-  const [torneios, setTorneios] = useLocalStorage<Torneio[]>('torneios', mockData.torneios);
-  const [registrosHorasProfessores, setRegistrosHorasProfessores] = useLocalStorage<RegistroHorasProfessor[]>('registrosHorasProfessores', mockData.registrosHorasProfessores);
-  const [aulasExperimentais, setAulasExperimentais] = useLocalStorage<AulaExperimental[]>('aulasExperimentais', mockData.aulasExperimentais);
-  const [listasPresenca, setListasPresenca] = useLocalStorage<ListaPresenca[]>('listasPresenca', mockData.listasPresenca);
- const [conquistas, setConquistas] = useLocalStorage<Conquista[]>('conquistas', mockData.conquistas);
-const [objetivosPessoais, setObjetivosPessoais] = useLocalStorage<ObjetivoPessoal[]>('objetivosPessoais', mockData.objetivosPessoais);
-const [autoAvaliacoes, setAutoAvaliacoes] = useLocalStorage<AutoAvaliacao[]>('autoAvaliacoes', mockData.autoAvaliacoes);
-const [avaliacoesNivel, setAvaliacoesNivel] = useLocalStorage<AvaliacaoNivel[]>(
-  'avaliacoesNivel',
-  mockData.avaliacoesNivel
-);
-const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaAluno[]>('estatisticasAlunos', mockData.estatisticasAlunos);
- const [configCT, setConfigCT] = useLocalStorage<ConfigCT>('configCT', mockData.configCT);
+  const [horarios, setHorarios] = useLocalStorage<Horario[]>('horarios', []);
+  const [metas, setMetas] = useLocalStorage<Meta[]>('metas', []);
+  const [metasGerais, setMetasGerais] = useLocalStorage<MetaGeral[]>('metasGerais', []);
+  const [alugueis, setAlugueis] = useLocalStorage<Aluguel[]>('alugueis', []);
+  const [agendamentos, setAgendamentos] = useLocalStorage<Agendamento[]>('agendamentos', []);
+  const [treinos, setTreinos] = useLocalStorage<Treino[]>('treinos', []);
+  const [exercicios, setExercicios] = useLocalStorage<Exercicio[]>('exercicios', []);
+  const [torneios, setTorneios] = useLocalStorage<Torneio[]>('torneios', []);
+  const [registrosHorasProfessores, setRegistrosHorasProfessores] = useLocalStorage<RegistroHorasProfessor[]>('registrosHorasProfessores', []);
+  const [aulasExperimentais, setAulasExperimentais] = useLocalStorage<AulaExperimental[]>('aulasExperimentais', []);
+  const [listasPresenca, setListasPresenca] = useLocalStorage<ListaPresenca[]>('listasPresenca', []);
+  const [conquistas, setConquistas] = useLocalStorage<Conquista[]>('conquistas', []);
+  const [objetivosPessoais, setObjetivosPessoais] = useLocalStorage<ObjetivoPessoal[]>('objetivosPessoais', []);
+  const [autoAvaliacoes, setAutoAvaliacoes] = useLocalStorage<AutoAvaliacao[]>('autoAvaliacoes', []);
+  const [avaliacoesNivel, setAvaliacoesNivel] = useLocalStorage<AvaliacaoNivel[]>('avaliacoesNivel', []);
+  const [estatisticasAlunos, setEstatisticasAlunos] = useLocalStorage<EstatisticaAluno[]>('estatisticasAlunos', []);
+  const [configCT, setConfigCT] = useLocalStorage<ConfigCT>('configCT', {} as ConfigCT);
 
   // Session state (not persisted)
   const [userLogado, setUserLogado] = useState<User | null>(null);

@@ -18,6 +18,14 @@ import planosRoutes from './routes/planosRoutes.js';
 import produtosRoutes from './routes/produtosRoutes.js';
 import presencasRoutes from './routes/presencasRoutes.js';
 import financeiroRoutes from './routes/financeiroRoutes.js';
+import agendamentosRoutes from './routes/agendamentosRoutes.js';
+import treinosRoutes from './routes/treinosRoutes.js';
+import exerciciosRoutes from './routes/exerciciosRoutes.js';
+import torneiosRoutes from './routes/torneiosRoutes.js';
+import aulasExperimentaisRoutes from './routes/aulasExperimentaisRoutes.js';
+import horariosRoutes from './routes/horariosRoutes.js';
+import configRoutes from './routes/configRoutes.js';
+import gestoresRoutes from './routes/gestoresRoutes.js';
 
 // Configuração
 dotenv.config();
@@ -68,6 +76,14 @@ app.use('/api/planos', planosRoutes);
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/presencas', presencasRoutes);
 app.use('/api/financeiro', financeiroRoutes);
+app.use('/api/agendamentos', agendamentosRoutes);
+app.use('/api/treinos', treinosRoutes);
+app.use('/api/exercicios', exerciciosRoutes);
+app.use('/api/torneios', torneiosRoutes);
+app.use('/api/aulas-experimentais', aulasExperimentaisRoutes);
+app.use('/api/horarios', horariosRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/gestores', gestoresRoutes);
 
 // Middleware de erro 404
 app.use(notFound);
@@ -79,24 +95,24 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`
-╔═══════════════════════════════════════╗
-║   🏐 Servidor FTV Backend Rodando    ║
-║                                       ║
-║   Porta: ${PORT}                        ║
-║   Ambiente: ${process.env.NODE_ENV || 'development'}              ║
-║   URL: http://localhost:${PORT}         ║
-║                                       ║
-║   Rotas disponíveis:                  ║
-║   - /health                           ║
-║   - /api/auth/*                       ║
-║   - /api/alunos/*                     ║
-║   - /api/professores/*                ║
-║   - /api/unidades/*                   ║
-║   - /api/planos/*                     ║
-║   - /api/produtos/*                   ║
-║   - /api/presencas/*                  ║
-║   - /api/financeiro/*                 ║
-╚═══════════════════════════════════════╝
+╔════════════════════════════════════════════╗
+║   🏐 Servidor FTV Backend Rodando          ║
+║                                            ║
+║   Porta: ${PORT}                              ║
+║   Ambiente: ${(process.env.NODE_ENV || 'development').padEnd(17)}   ║
+║   URL: http://localhost:${PORT}               ║
+║                                            ║
+║   Rotas disponíveis:                       ║
+║   - /api/auth, /api/alunos                 ║
+║   - /api/professores, /api/unidades        ║
+║   - /api/planos, /api/produtos             ║
+║   - /api/presencas, /api/financeiro        ║
+║   - /api/agendamentos, /api/treinos        ║
+║   - /api/exercicios, /api/torneios         ║
+║   - /api/aulas-experimentais               ║
+║   - /api/horarios, /api/config             ║
+║   - /api/gestores, /health                 ║
+╚════════════════════════════════════════════╝
     `);
   });
 }
