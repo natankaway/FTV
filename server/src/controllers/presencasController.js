@@ -7,7 +7,7 @@ export const listarPresencas = async (req, res) => {
 
     let query = supabaseAdmin
       .from('presencas')
-      .select('*, aluno:alunos(nome), professor:professores(nome)')
+      .select('*')
       .order('data', { ascending: false });
 
     if (aluno_id) {
@@ -40,7 +40,7 @@ export const buscarPresenca = async (req, res) => {
 
     const { data: presenca, error } = await supabaseAdmin
       .from('presencas')
-      .select('*, aluno:alunos(nome), professor:professores(nome)')
+      .select('*')
       .eq('id', id)
       .single();
 

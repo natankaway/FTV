@@ -7,7 +7,7 @@ export const listarTransacoes = async (req, res) => {
 
     let query = supabaseAdmin
       .from('registros_financeiros')
-      .select('*, aluno:alunos(nome), unidade:unidades(nome)')
+      .select('*')
       .order('data', { ascending: false });
 
     if (tipo) {
@@ -52,7 +52,7 @@ export const buscarTransacao = async (req, res) => {
 
     const { data: transacao, error } = await supabaseAdmin
       .from('registros_financeiros')
-      .select('*, aluno:alunos(nome), unidade:unidades(nome)')
+      .select('*')
       .eq('id', id)
       .single();
 
