@@ -8,6 +8,14 @@ export { planosService } from './planosService';
 export { produtosService } from './produtosService';
 export { presencasService } from './presencasService';
 export { financeiroService } from './financeiroService';
+export { agendamentosService } from './agendamentosService';
+export { treinosService } from './treinosService';
+export { exerciciosService } from './exerciciosService';
+export { torneiosService } from './torneiosService';
+export { aulasExperimentaisService } from './aulasExperimentaisService';
+export { horariosService } from './horariosService';
+export { configService } from './configService';
+export { gestoresService } from './gestoresService';
 
 // Re-export types
 export type { LoginCredentials, LoginResponse } from './authService';
@@ -18,3 +26,11 @@ export type { CreatePlanoData, UpdatePlanoData } from './planosService';
 export type { CreateProdutoData, UpdateProdutoData } from './produtosService';
 export type { CreatePresencaData, UpdatePresencaData } from './presencasService';
 export type { CreateTransacaoData, UpdateTransacaoData, FinanceiroFilters } from './financeiroService';
+export type { CreateAgendamentoData, UpdateAgendamentoData, AgendamentoFilters } from './agendamentosService';
+export type { CreateTreinoData, UpdateTreinoData, TreinoFilters } from './treinosService';
+export type { CreateExercicioData, UpdateExercicioData, ExercicioFilters } from './exerciciosService';
+export type { CreateTorneioData, UpdateTorneioData, TorneioFilters } from './torneiosService';
+export type { CreateAulaExperimentalData, UpdateAulaExperimentalData, AulaExperimentalFilters } from './aulasExperimentaisService';
+export type { CreateHorarioData, UpdateHorarioData, HorarioFilters } from './horariosService';
+export type { UpdateConfigData } from './configService';
+export type { CreateGestorData, UpdateGestorData, GestorFilters } from './gestoresService';
