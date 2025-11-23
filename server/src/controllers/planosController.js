@@ -6,7 +6,7 @@ export const listarPlanos = async (req, res) => {
     const { data: planos, error } = await supabaseAdmin
       .from('planos')
       .select('*')
-      .order('valor', { ascending: true });
+      .order('preco', { ascending: true });
 
     if (error) {
       console.error('Erro Supabase ao listar planos:', error);
