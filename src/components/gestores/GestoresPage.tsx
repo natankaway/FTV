@@ -367,7 +367,7 @@ export const GestoresPage: React.FC = memo(() => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4" />
-                        <span>{gestor.unidades.join(', ')}</span>
+                        <span>{Array.isArray(gestor.unidades) ? gestor.unidades.join(', ') : gestor.unidades || 'Sem unidades'}</span>
                       </div>
                     </div>
                   </div>
