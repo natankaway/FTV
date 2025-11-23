@@ -9,7 +9,7 @@ export const getAlunos = async (req, res) => {
       .from('alunos')
       .select(`
         *,
-        usuario:usuarios(*),
+        usuario:usuarios(nome, email, telefone, ativo),
         unidade:unidades(nome),
         plano:planos(nome, preco)
       `)
@@ -29,7 +29,7 @@ export const getAlunos = async (req, res) => {
     }
 
     // Se não for admin, filtrar por unidade do usuário
-    if (req.user.perfil !== 'admin') {
+    if (req.user && req.user.perfil !== 'admin') {
       // Gestores veem apenas suas unidades
       if (req.user.perfil === 'gestor') {
         // Buscar unidades do gestor
@@ -48,10 +48,22 @@ export const getAlunos = async (req, res) => {
 
     if (error) throw error;
 
+    // Transformar dados para achatar a estrutura do usuario
+    const alunosTransformados = data.map(aluno => ({
+      ...aluno,
+      nome: aluno.usuario?.nome || '',
+      email: aluno.usuario?.email || '',
+      telefone: aluno.usuario?.telefone || '',
+      ativo: aluno.usuario?.ativo ?? true,
+      unidade: aluno.unidade?.nome || '',
+      plano_nome: aluno.plano?.nome || '',
+      plano_preco: aluno.plano?.preco || 0
+    }));
+
     res.json({
       success: true,
-      count: data.length,
-      alunos: data
+      count: alunosTransformados.length,
+      alunos: alunosTransformados
     });
 
   } catch (error) {
