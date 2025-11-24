@@ -3,21 +3,26 @@ import type { Treino } from '@/types';
 
 export interface CreateTreinoData {
   nome: string;
-  descricao?: string;
-  duracao_minutos?: number;
+  tipo?: 'tecnico' | 'fisico' | 'tatico' | 'jogo';
   nivel?: 'iniciante' | 'intermediario' | 'avancado';
-  tipo?: string;
-  exercicios?: number[];
+  duracao?: number;
+  objetivo?: string;
+  equipamentos?: string[];
+  observacoes?: string;
+  professor_id?: string;
+  unidade_id?: string;
+  data?: string;
+  status?: 'planejado' | 'em-andamento' | 'concluido';
+  prancheta_data?: any;
 }
 
-export interface UpdateTreinoData extends Partial<CreateTreinoData> {
-  ativo?: boolean;
-}
+export interface UpdateTreinoData extends Partial<CreateTreinoData> {}
 
 export interface TreinoFilters {
   nivel?: string;
   tipo?: string;
-  ativo?: boolean;
+  status?: string;
+  professor_id?: string;
 }
 
 class TreinosService {

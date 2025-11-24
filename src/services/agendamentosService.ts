@@ -2,22 +2,25 @@ import api from './api';
 import type { Agendamento } from '@/types';
 
 export interface CreateAgendamentoData {
-  aluno_id: number;
-  professor_id?: number;
-  unidade_id: string;
+  aluno_id?: string;
+  professor_id: string;
+  unidade_id?: string;
   data: string;
-  horario: string;
-  tipo: 'treino' | 'aula' | 'experimental' | 'avaliacao';
-  status?: 'agendado' | 'confirmado' | 'cancelado' | 'realizado';
+  hora_inicio: string;
+  hora_fim: string;
+  tipo?: 'aula' | 'treino' | 'avaliacao' | 'individual';
+  status?: 'confirmado' | 'pendente' | 'cancelado';
   observacoes?: string;
+  recorrencia_tipo?: 'nenhuma' | 'semanal' | 'quinzenal' | 'mensal';
+  recorrencia_quantidade?: number;
 }
 
 export interface UpdateAgendamentoData extends Partial<CreateAgendamentoData> {}
 
 export interface AgendamentoFilters {
   unidade_id?: string;
-  aluno_id?: number;
-  professor_id?: number;
+  aluno_id?: string;
+  professor_id?: string;
   data_inicio?: string;
   data_fim?: string;
   status?: string;

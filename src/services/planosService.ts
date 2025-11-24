@@ -4,9 +4,9 @@ import type { Plano } from '@/types';
 export interface CreatePlanoData {
   nome: string;
   descricao?: string;
-  valor: number;
-  duracao_dias: number;
-  aulas_semanais?: number;
+  preco: number;
+  unidade_id?: string;
+  beneficios?: string[];
 }
 
 export interface UpdatePlanoData extends Partial<CreatePlanoData> {

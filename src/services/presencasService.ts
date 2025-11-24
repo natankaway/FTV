@@ -2,11 +2,12 @@ import api from './api';
 import type { Presenca } from '@/types';
 
 export interface CreatePresencaData {
-  aluno_id: number;
+  aluno_id: string;
   data: string;
-  presente: boolean;
-  justificativa?: string;
-  professor_id?: number;
+  hora: string;
+  status?: 'presente' | 'falta';
+  tipo?: 'treino' | 'aula' | 'individual';
+  professor_id?: string;
   unidade_id?: string;
 }
 

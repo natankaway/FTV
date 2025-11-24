@@ -2,15 +2,17 @@ import api from './api';
 import type { AulaExperimental } from '@/types';
 
 export interface CreateAulaExperimentalData {
-  nome_interessado: string;
+  aluno_id?: string;
   email?: string;
-  telefone: string;
-  data_agendada: string;
-  horario: string;
-  unidade_id: string;
-  professor_id?: number;
+  telefone?: string;
+  data_agendamento: string;
+  professor_id?: string;
+  unidade_id?: string;
   observacoes?: string;
-  status?: 'agendada' | 'confirmada' | 'realizada' | 'cancelada' | 'convertida';
+  status?: 'agendada' | 'realizada' | 'nao-compareceu' | 'convertido' | 'inativo';
+  data_realizacao?: string;
+  data_conversao?: string;
+  plano_convertido?: any;
 }
 
 export interface UpdateAulaExperimentalData extends Partial<CreateAulaExperimentalData> {}

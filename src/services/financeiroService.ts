@@ -2,25 +2,28 @@ import api from './api';
 import type { RegistroFinanceiro } from '@/types';
 
 export interface CreateTransacaoData {
-  aluno_id?: number;
-  tipo: 'entrada' | 'saida';
-  categoria: string;
-  descricao: string;
+  aluno_id?: string;
+  professor_id?: string;
+  tipo: 'receita' | 'despesa';
+  categoria?: string;
+  descricao?: string;
   valor: number;
   data: string;
-  metodo_pagamento?: string;
+  vencimento?: string;
+  metodo?: string;
   unidade_id?: string;
-  status?: 'pendente' | 'pago' | 'cancelado';
+  status?: 'pendente' | 'pago' | 'vencido';
+  observacoes?: string;
 }
 
 export interface UpdateTransacaoData extends Partial<CreateTransacaoData> {}
 
 export interface FinanceiroFilters {
-  tipo?: 'entrada' | 'saida';
+  tipo?: 'receita' | 'despesa';
   data_inicio?: string;
   data_fim?: string;
   unidade_id?: string;
-  aluno_id?: number;
+  aluno_id?: string;
   status?: string;
 }
 
