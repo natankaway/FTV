@@ -4,20 +4,16 @@ import type { Torneio } from '@/types';
 export interface CreateTorneioData {
   nome: string;
   descricao?: string;
-  data_inicio: string;
-  data_fim?: string;
   local?: string;
-  unidade_id?: string;
-  categoria?: string;
-  max_participantes?: number;
-  valor_inscricao?: number;
-  status?: 'planejado' | 'inscricoes_abertas' | 'em_andamento' | 'finalizado' | 'cancelado';
+  data_inicio?: string;
+  data_fim?: string;
+  status?: 'Inscrições' | 'Sorteio' | 'Em andamento' | 'Finalizado';
+  criado_por?: string;
 }
 
 export interface UpdateTorneioData extends Partial<CreateTorneioData> {}
 
 export interface TorneioFilters {
-  unidade_id?: string;
   status?: string;
   data_inicio?: string;
   data_fim?: string;

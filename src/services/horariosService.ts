@@ -2,13 +2,12 @@ import api from './api';
 import type { Horario } from '@/types';
 
 export interface CreateHorarioData {
-  unidade_id: string;
-  professor_id?: number;
-  dia_semana: number; // 0-6 (domingo-sábado)
+  unidade_id?: string;
+  dia_semana: 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
   hora_inicio: string;
   hora_fim: string;
-  tipo?: string;
   capacidade?: number;
+  nivel_id?: string;
   ativo?: boolean;
 }
 
@@ -16,8 +15,7 @@ export interface UpdateHorarioData extends Partial<CreateHorarioData> {}
 
 export interface HorarioFilters {
   unidade_id?: string;
-  professor_id?: number;
-  dia_semana?: number;
+  dia_semana?: string;
   ativo?: boolean;
 }
 

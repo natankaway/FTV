@@ -2,6 +2,7 @@ import React, { memo, useState, useMemo, useCallback } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button } from '@/components/common';
 import { NovoPlanoModal } from '@/components/forms';
+import { planosService } from '@/services';
 import { 
   CreditCard, 
   Plus, 
@@ -205,14 +206,24 @@ export const PlanosPage: React.FC = memo(() => {
     setShowModal(true);
   }, []);
 
-  const handleDelete = useCallback((id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este plano?')) {
-      setPlanos(prev => prev.filter(p => p.id !== id));
-      addNotification({
-        type: 'success',
-        title: 'Plano excluído',
-        message: 'Plano removido com sucesso'
-      });
+      try {
+        await planosService.delete(id);
+        setPlanos(prev => prev.filter(p => p.id !== id));
+        addNotification({
+          type: 'success',
+          title: 'Plano excluído',
+          message: 'Plano removido com sucesso'
+        });
+      } catch (error) {
+        console.error('Erro ao excluir plano:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Não foi possível excluir o plano'
+        });
+      }
     }
   }, [setPlanos, addNotification]);
 

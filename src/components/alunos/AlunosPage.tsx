@@ -2,6 +2,7 @@ import React, { memo, useState, useMemo, useCallback, useEffect, useRef } from '
 import { useAppState, useNotifications } from '@/contexts';
 import { Button } from '@/components/common';
 import { NovoAlunoModal } from '@/components/forms';
+import { alunosService } from '@/services';
 import { 
   Users, 
   Plus, 
@@ -521,22 +522,28 @@ const unidadesDisponiveis = useMemo(() => {
   // Ações em lote
   const bulkChangeStatus = useCallback(async (newStatus: 'ativo' | 'inativo' | 'pendente') => {
     if (selectedAlunos.length === 0) return;
-    
+
     try {
-      setAlunos(prev => prev.map(aluno => 
-        selectedAlunos.includes(aluno.id) 
+      // Update each aluno via API
+      await Promise.all(
+        selectedAlunos.map(id => alunosService.update(id, { status: newStatus }))
+      );
+
+      setAlunos(prev => prev.map(aluno =>
+        selectedAlunos.includes(aluno.id)
           ? { ...aluno, status: newStatus }
           : aluno
       ));
-      
+
       addNotification({
         type: 'success',
         title: 'Status atualizado',
         message: `${selectedAlunos.length} alunos marcados como ${newStatus}`
       });
-      
+
       setSelectedAlunos([]);
     } catch (error) {
+      console.error('Erro ao atualizar status:', error);
       addNotification({
         type: 'error',
         title: 'Erro',
@@ -547,21 +554,27 @@ const unidadesDisponiveis = useMemo(() => {
 
   const bulkDelete = useCallback(async () => {
     if (selectedAlunos.length === 0) return;
-    
+
     const confirmed = window.confirm(`Tem certeza que deseja excluir ${selectedAlunos.length} alunos?`);
     if (!confirmed) return;
-    
+
     try {
+      // Delete each aluno via API
+      await Promise.all(
+        selectedAlunos.map(id => alunosService.delete(id))
+      );
+
       setAlunos(prev => prev.filter(aluno => !selectedAlunos.includes(aluno.id)));
-      
+
       addNotification({
         type: 'success',
         title: 'Alunos excluídos',
         message: `${selectedAlunos.length} alunos removidos com sucesso`
       });
-      
+
       setSelectedAlunos([]);
     } catch (error) {
+      console.error('Erro ao excluir alunos:', error);
       addNotification({
         type: 'error',
         title: 'Erro',
@@ -795,14 +808,24 @@ const unidadesDisponiveis = useMemo(() => {
     setShowModal(true);
   }, []);
 
-  const handleDelete = useCallback((id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este aluno?')) {
-      setAlunos(prev => prev.filter(a => a.id !== id));
-      addNotification({
-        type: 'success',
-        title: 'Aluno excluído',
-        message: 'Aluno removido com sucesso'
-      });
+      try {
+        await alunosService.delete(id);
+        setAlunos(prev => prev.filter(a => a.id !== id));
+        addNotification({
+          type: 'success',
+          title: 'Aluno excluído',
+          message: 'Aluno removido com sucesso'
+        });
+      } catch (error) {
+        console.error('Erro ao excluir aluno:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Não foi possível excluir o aluno'
+        });
+      }
     }
   }, [setAlunos, addNotification]);
 

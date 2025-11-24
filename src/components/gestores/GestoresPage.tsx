@@ -1,11 +1,12 @@
 import React, { memo, useState, useMemo, useCallback } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button, Input, Modal } from '@/components/common';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Edit, 
+import { gestoresService } from '@/services';
+import {
+  Users,
+  Plus,
+  Search,
+  Edit,
   Trash,
   Eye,
   EyeOff,
@@ -178,76 +179,88 @@ export const GestoresPage: React.FC = memo(() => {
     }));
   }, [setUnidades]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!validateForm()) return;
-    
-    if (editingGestor) {
-      // Update existing gestor
-      const updatedGestor: Gestor = {
-        ...editingGestor,
-        nome: formData.nome,
-        email: formData.email,
-        telefone: formData.telefone,
-        cargo: formData.cargo,
-        unidades: formData.unidades,
-        ativo: formData.ativo,
-        // Only update password if provided
-        ...(formData.senha && { senha: formData.senha })
-      };
-      
-      setGestores(prev => prev.map(g => g.id === editingGestor.id ? updatedGestor : g));
-      updateUnidadesGestorId(editingGestor.id, formData.unidades, editingGestor.unidades);
-      
+
+    try {
+      if (editingGestor) {
+        // Update existing gestor via API
+        const updatedGestor = await gestoresService.update(editingGestor.id as unknown as number, {
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          cargo: formData.cargo,
+          unidades_ids: formData.unidades,
+          ativo: formData.ativo
+        });
+
+        setGestores(prev => prev.map(g => g.id === editingGestor.id ? { ...g, ...updatedGestor, unidades: formData.unidades } : g));
+        updateUnidadesGestorId(editingGestor.id, formData.unidades, editingGestor.unidades);
+
+        addNotification({
+          type: 'success',
+          title: 'Gestor atualizado',
+          message: `${formData.nome} foi atualizado com sucesso`
+        });
+      } else {
+        // Create new gestor via API
+        const newGestor = await gestoresService.create({
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          cargo: formData.cargo,
+          unidades_ids: formData.unidades,
+          permissoes: ['gestor']
+        });
+
+        setGestores(prev => [...prev, { ...newGestor, unidades: formData.unidades, ativo: true }]);
+        updateUnidadesGestorId(newGestor.id, formData.unidades);
+
+        addNotification({
+          type: 'success',
+          title: 'Gestor criado',
+          message: `${formData.nome} foi adicionado com sucesso`
+        });
+      }
+
+      closeModal();
+    } catch (error) {
+      console.error('Erro ao salvar gestor:', error);
       addNotification({
-        type: 'success',
-        title: 'Gestor atualizado',
-        message: `${formData.nome} foi atualizado com sucesso`
-      });
-    } else {
-      // Create new gestor
-      const newId = Math.max(...gestores.map(g => g.id), 0) + 1;
-      const newGestor: Gestor = {
-        id: newId,
-        nome: formData.nome,
-        email: formData.email,
-        senha: formData.senha,
-        telefone: formData.telefone,
-        cargo: formData.cargo,
-        unidades: formData.unidades,
-        permissoes: ['gestor'], // Default permissions
-        ativo: formData.ativo
-      };
-      
-      setGestores(prev => [...prev, newGestor]);
-      updateUnidadesGestorId(newId, formData.unidades);
-      
-      addNotification({
-        type: 'success',
-        title: 'Gestor criado',
-        message: `${formData.nome} foi adicionado com sucesso`
+        type: 'error',
+        title: 'Erro ao salvar',
+        message: 'Não foi possível salvar o gestor. Tente novamente.'
       });
     }
-    
-    closeModal();
-  }, [formData, editingGestor, gestores, setGestores, updateUnidadesGestorId, validateForm, addNotification, closeModal]);
+  }, [formData, editingGestor, setGestores, updateUnidadesGestorId, validateForm, addNotification, closeModal]);
 
-  const toggleGestorStatus = useCallback((gestor: Gestor) => {
+  const toggleGestorStatus = useCallback(async (gestor: Gestor) => {
     const newStatus = !gestor.ativo;
-    setGestores(prev => prev.map(g => 
-      g.id === gestor.id ? { ...g, ativo: newStatus } : g
-    ));
-    
-    addNotification({
-      type: 'success',
-      title: `Gestor ${newStatus ? 'ativado' : 'desativado'}`,
-      message: `${gestor.nome} foi ${newStatus ? 'ativado' : 'desativado'} com sucesso`
-    });
+    try {
+      await gestoresService.update(gestor.id as unknown as number, { ativo: newStatus });
+      setGestores(prev => prev.map(g =>
+        g.id === gestor.id ? { ...g, ativo: newStatus } : g
+      ));
+
+      addNotification({
+        type: 'success',
+        title: `Gestor ${newStatus ? 'ativado' : 'desativado'}`,
+        message: `${gestor.nome} foi ${newStatus ? 'ativado' : 'desativado'} com sucesso`
+      });
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Não foi possível alterar o status do gestor.'
+      });
+    }
   }, [setGestores, addNotification]);
 
-  const deleteGestor = useCallback((gestor: Gestor) => {
+  const deleteGestor = useCallback(async (gestor: Gestor) => {
     // Check if gestor is assigned to any active unit
     const assignedUnits = unidades.filter(u => u.gestorId === gestor.id && u.ativa);
-    
+
     if (assignedUnits.length > 0) {
       addNotification({
         type: 'error',
@@ -256,19 +269,29 @@ export const GestoresPage: React.FC = memo(() => {
       });
       return;
     }
-    
+
     if (window.confirm(`Tem certeza que deseja excluir o gestor ${gestor.nome}?`)) {
-      setGestores(prev => prev.filter(g => g.id !== gestor.id));
-      // Remove from any units that might reference this gestor
-      setUnidades(prev => prev.map(u => 
-        u.gestorId === gestor.id ? { ...u, gestorId: 0 } : u
-      ));
-      
-      addNotification({
-        type: 'success',
-        title: 'Gestor excluído',
-        message: `${gestor.nome} foi removido com sucesso`
-      });
+      try {
+        await gestoresService.delete(gestor.id as unknown as number);
+        setGestores(prev => prev.filter(g => g.id !== gestor.id));
+        // Remove from any units that might reference this gestor
+        setUnidades(prev => prev.map(u =>
+          u.gestorId === gestor.id ? { ...u, gestorId: 0 } : u
+        ));
+
+        addNotification({
+          type: 'success',
+          title: 'Gestor excluído',
+          message: `${gestor.nome} foi removido com sucesso`
+        });
+      } catch (error) {
+        console.error('Erro ao excluir gestor:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Não foi possível excluir o gestor.'
+        });
+      }
     }
   }, [unidades, setGestores, setUnidades, addNotification]);
 

@@ -3,22 +3,18 @@ import type { Exercicio } from '@/types';
 
 export interface CreateExercicioData {
   nome: string;
+  duracao?: number;
   descricao?: string;
-  tipo?: string;
-  grupo_muscular?: string;
+  categoria?: 'aquecimento' | 'tecnica' | 'tatica' | 'fisico' | 'finalizacao';
+  equipamentos?: string[];
   nivel?: 'iniciante' | 'intermediario' | 'avancado';
-  video_url?: string;
-  imagem_url?: string;
 }
 
-export interface UpdateExercicioData extends Partial<CreateExercicioData> {
-  ativo?: boolean;
-}
+export interface UpdateExercicioData extends Partial<CreateExercicioData> {}
 
 export interface ExercicioFilters {
-  tipo?: string;
+  categoria?: string;
   nivel?: string;
-  grupo_muscular?: string;
 }
 
 class ExerciciosService {

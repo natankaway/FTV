@@ -92,16 +92,16 @@ export const obterResumo = async (req, res) => {
 
     const resumo = transacoes.reduce((acc, t) => {
       if (t.status === 'pago') {
-        if (t.tipo === 'entrada') {
-          acc.entradas += t.valor;
-        } else {
-          acc.saidas += t.valor;
+        if (t.tipo === 'receita') {
+          acc.receitas += t.valor;
+        } else if (t.tipo === 'despesa') {
+          acc.despesas += t.valor;
         }
       }
       return acc;
-    }, { entradas: 0, saidas: 0 });
+    }, { receitas: 0, despesas: 0 });
 
-    resumo.saldo = resumo.entradas - resumo.saidas;
+    resumo.saldo = resumo.receitas - resumo.despesas;
 
     res.json({ resumo });
   } catch (error) {

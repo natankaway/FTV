@@ -2,6 +2,7 @@ import React, { memo, useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button } from '@/components/common';
 import { NovoProfessorModal } from '@/components/forms';
+import { professoresService } from '@/services';
 import { 
   Users, 
   Plus, 
@@ -617,22 +618,28 @@ export const ProfessoresPage: React.FC = memo(() => {
 
   const bulkChangeStatus = useCallback(async (newStatus: boolean) => {
     if (selectedProfessores.length === 0) return;
-    
+
     try {
-      setProfessores(prev => prev.map(professor => 
-        selectedProfessores.includes(professor.id) 
+      // Update each professor via API
+      await Promise.all(
+        selectedProfessores.map(id => professoresService.update(id, { ativo: newStatus }))
+      );
+
+      setProfessores(prev => prev.map(professor =>
+        selectedProfessores.includes(professor.id)
           ? { ...professor, ativo: newStatus }
           : professor
       ));
-      
+
       addNotification({
         type: 'success',
         title: 'Status atualizado',
         message: `${selectedProfessores.length} professores ${newStatus ? 'ativados' : 'desativados'}`
       });
-      
+
       setSelectedProfessores([]);
     } catch (error) {
+      console.error('Erro ao atualizar status:', error);
       addNotification({
         type: 'error',
         title: 'Erro',
@@ -643,19 +650,24 @@ export const ProfessoresPage: React.FC = memo(() => {
 
   const bulkDelete = useCallback(async () => {
     if (selectedProfessores.length === 0) return;
-    
+
     const confirmed = window.confirm(`Tem certeza que deseja excluir ${selectedProfessores.length} professores?`);
     if (!confirmed) return;
-    
+
     try {
+      // Delete each professor via API
+      await Promise.all(
+        selectedProfessores.map(id => professoresService.delete(id))
+      );
+
       setProfessores(prev => prev.filter(professor => !selectedProfessores.includes(professor.id)));
-      
+
       addNotification({
         type: 'success',
         title: 'Professores excluídos',
         message: `${selectedProfessores.length} professores removidos`
       });
-      
+
       setSelectedProfessores([]);
     } catch (error) {
       addNotification({
@@ -849,14 +861,24 @@ export const ProfessoresPage: React.FC = memo(() => {
     setShowModal(true);
   }, []);
 
-  const handleDelete = useCallback((id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este professor?')) {
-      setProfessores(prev => prev.filter(p => p.id !== id));
-      addNotification({
-        type: 'success',
-        title: 'Professor excluído',
-        message: 'Professor removido com sucesso'
-      });
+      try {
+        await professoresService.delete(id);
+        setProfessores(prev => prev.filter(p => p.id !== id));
+        addNotification({
+          type: 'success',
+          title: 'Professor excluído',
+          message: 'Professor removido com sucesso'
+        });
+      } catch (error) {
+        console.error('Erro ao excluir professor:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Não foi possível excluir o professor'
+        });
+      }
     }
   }, [setProfessores, addNotification]);
 

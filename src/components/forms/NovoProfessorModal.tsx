@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Modal, Button, Input } from '@/components/common';
-import { 
-  X, Eye, EyeOff, Plus, Save, User, Mail, Phone, Lock, 
+import {
+  X, Eye, EyeOff, Plus, Save, User, Mail, Phone, Lock,
   DollarSign, Clock, Briefcase, FileText, Building2, MapPin, Star, Info
 } from 'lucide-react';
 import type { Professor, ProfessorFormData } from '@/types';
+import { professoresService } from '@/services';
 
 interface NovoProfessorModalProps {
   isOpen: boolean;
@@ -294,7 +295,7 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -302,28 +303,49 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const professorData: Professor = {
-        id: editingProfessor?.id || generateId(),
+      // Prepare API data (snake_case)
+      const apiData = {
         nome: formData.nome,
         telefone: formData.telefone,
         email: formData.email,
         senha: formData.senha,
-        tipoPagamento: formData.tipoPagamento,
-        valorFixo: formData.tipoPagamento === 'fixo' ? formData.valorFixo : undefined,
-		valorHoraFixa: formData.tipoPagamento === 'hora-fixa' ? formData.valorHoraFixa : undefined,
-        valoresHoras: formData.tipoPagamento === 'horas-variaveis' ? formData.valoresHoras : undefined,
-        valorAulao: formData.valorAulao,
+        tipo_pagamento: formData.tipoPagamento,
+        valor_fixo: formData.tipoPagamento === 'fixo' ? formData.valorFixo : undefined,
+        valor_hora_fixa: formData.tipoPagamento === 'hora-fixa' ? formData.valorHoraFixa : undefined,
+        valores_horas: formData.tipoPagamento === 'horas-variaveis' ? formData.valoresHoras : undefined,
+        valor_aulao: formData.valorAulao,
         especialidades: formData.especialidades,
         experiencia: formData.experiencia,
         observacoes: formData.observacoes,
         ativo: formData.ativo ?? true,
-        unidades: formData.unidades, // 🆕 SALVAR UNIDADES
-        unidadePrincipal: formData.unidadePrincipal // 🆕 SALVAR UNIDADE PRINCIPAL
+        unidades: formData.unidades,
+        unidade_principal: formData.unidadePrincipal
       };
 
       if (editingProfessor) {
+        // Update via API
+        const updatedProfessor = await professoresService.update(editingProfessor.id, apiData);
+
+        // Update local state
+        const professorData: Professor = {
+          id: editingProfessor.id,
+          nome: formData.nome,
+          telefone: formData.telefone,
+          email: formData.email,
+          senha: formData.senha,
+          tipoPagamento: formData.tipoPagamento,
+          valorFixo: formData.tipoPagamento === 'fixo' ? formData.valorFixo : undefined,
+          valorHoraFixa: formData.tipoPagamento === 'hora-fixa' ? formData.valorHoraFixa : undefined,
+          valoresHoras: formData.tipoPagamento === 'horas-variaveis' ? formData.valoresHoras : undefined,
+          valorAulao: formData.valorAulao,
+          especialidades: formData.especialidades,
+          experiencia: formData.experiencia,
+          observacoes: formData.observacoes,
+          ativo: formData.ativo ?? true,
+          unidades: formData.unidades,
+          unidadePrincipal: formData.unidadePrincipal
+        };
+
         setProfessores(prev => prev.map(p => p.id === editingProfessor.id ? professorData : p));
         addNotification({
           type: 'success',
@@ -331,6 +353,29 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
           message: 'Os dados do professor foram atualizados com sucesso!'
         });
       } else {
+        // Create via API
+        const newProfessor = await professoresService.create(apiData);
+
+        // Add to local state with ID from API
+        const professorData: Professor = {
+          id: newProfessor.id || generateId(),
+          nome: formData.nome,
+          telefone: formData.telefone,
+          email: formData.email,
+          senha: formData.senha,
+          tipoPagamento: formData.tipoPagamento,
+          valorFixo: formData.tipoPagamento === 'fixo' ? formData.valorFixo : undefined,
+          valorHoraFixa: formData.tipoPagamento === 'hora-fixa' ? formData.valorHoraFixa : undefined,
+          valoresHoras: formData.tipoPagamento === 'horas-variaveis' ? formData.valoresHoras : undefined,
+          valorAulao: formData.valorAulao,
+          especialidades: formData.especialidades,
+          experiencia: formData.experiencia,
+          observacoes: formData.observacoes,
+          ativo: formData.ativo ?? true,
+          unidades: formData.unidades,
+          unidadePrincipal: formData.unidadePrincipal
+        };
+
         setProfessores(prev => [...prev, professorData]);
         addNotification({
           type: 'success',
@@ -341,6 +386,7 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
 
       onClose();
     } catch (error) {
+      console.error('Erro ao salvar professor:', error);
       addNotification({
         type: 'error',
         title: 'Erro ao salvar',

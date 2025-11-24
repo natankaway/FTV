@@ -3,6 +3,7 @@ import { useAppState, useNotifications } from '@/contexts';
 import { Modal, Button, Input } from '@/components/common';
 import { Plus, X } from 'lucide-react';
 import type { Plano } from '@/types';
+import { planosService } from '@/services';
 
 interface NovoPlanoModalProps {
   isOpen: boolean;
@@ -146,7 +147,7 @@ export const NovoPlanoModal: React.FC<NovoPlanoModalProps> = ({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -154,20 +155,33 @@ export const NovoPlanoModal: React.FC<NovoPlanoModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Find unidade_id from unidade name
+      const unidadeObj = unidades.find(u => u.nome === formData.unidade);
+      const unidadeId = unidadeObj?.id?.toString() || formData.unidade;
 
-      const planoData: Plano = {
-        id: editingPlano ? editingPlano.id : Date.now(),
+      // Prepare API data
+      const apiData = {
         nome: formData.nome,
         preco: formData.preco,
-        unidade: formData.unidade,
+        unidade_id: unidadeId,
         descricao: formData.descricao,
         beneficios: formData.beneficios
       };
 
       if (editingPlano) {
-        // Update existing plan
+        // Update via API
+        const updatedPlano = await planosService.update(editingPlano.id, apiData);
+
+        // Update local state
+        const planoData: Plano = {
+          id: editingPlano.id,
+          nome: formData.nome,
+          preco: formData.preco,
+          unidade: formData.unidade,
+          descricao: formData.descricao,
+          beneficios: formData.beneficios
+        };
+
         setPlanos(prev => prev.map(p => p.id === editingPlano.id ? planoData : p));
         addNotification({
           type: 'success',
@@ -175,7 +189,19 @@ export const NovoPlanoModal: React.FC<NovoPlanoModalProps> = ({
           message: 'Os dados do plano foram atualizados com sucesso!'
         });
       } else {
-        // Add new plan
+        // Create via API
+        const newPlano = await planosService.create(apiData);
+
+        // Add to local state with ID from API
+        const planoData: Plano = {
+          id: newPlano.id || Date.now(),
+          nome: formData.nome,
+          preco: formData.preco,
+          unidade: formData.unidade,
+          descricao: formData.descricao,
+          beneficios: formData.beneficios
+        };
+
         setPlanos(prev => [...prev, planoData]);
         addNotification({
           type: 'success',
@@ -186,6 +212,7 @@ export const NovoPlanoModal: React.FC<NovoPlanoModalProps> = ({
 
       onClose();
     } catch (error) {
+      console.error('Erro ao salvar plano:', error);
       addNotification({
         type: 'error',
         title: 'Erro ao salvar',
@@ -194,7 +221,7 @@ export const NovoPlanoModal: React.FC<NovoPlanoModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, editingPlano, validateForm, setPlanos, addNotification, onClose]);
+  }, [formData, editingPlano, validateForm, setPlanos, addNotification, onClose, unidades]);
 
   const getPlanoPreview = () => {
     const { preco } = formData;
