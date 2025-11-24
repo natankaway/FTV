@@ -26,6 +26,12 @@ import aulasExperimentaisRoutes from './routes/aulasExperimentaisRoutes.js';
 import horariosRoutes from './routes/horariosRoutes.js';
 import configRoutes from './routes/configRoutes.js';
 import gestoresRoutes from './routes/gestoresRoutes.js';
+import listasPresencaRoutes from './routes/listasPresencaRoutes.js';
+import registrosHorasProfessoresRoutes from './routes/registrosHorasProfessoresRoutes.js';
+import avaliacoesNivelRoutes from './routes/avaliacoesNivelRoutes.js';
+import conquistasRoutes from './routes/conquistasRoutes.js';
+import objetivosPessoaisRoutes from './routes/objetivosPessoaisRoutes.js';
+import autoAvaliacoesRoutes from './routes/autoAvaliacoesRoutes.js';
 
 // Configuração
 dotenv.config();
@@ -84,6 +90,12 @@ app.use('/api/aulas-experimentais', aulasExperimentaisRoutes);
 app.use('/api/horarios', horariosRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/gestores', gestoresRoutes);
+app.use('/api/listas-presenca', listasPresencaRoutes);
+app.use('/api/registros-horas-professores', registrosHorasProfessoresRoutes);
+app.use('/api/avaliacoes-nivel', avaliacoesNivelRoutes);
+app.use('/api/conquistas', conquistasRoutes);
+app.use('/api/objetivos-pessoais', objetivosPessoaisRoutes);
+app.use('/api/auto-avaliacoes', autoAvaliacoesRoutes);
 
 // Middleware de erro 404
 app.use(notFound);
@@ -111,7 +123,11 @@ if (process.env.NODE_ENV !== 'test') {
 ║   - /api/exercicios, /api/torneios         ║
 ║   - /api/aulas-experimentais               ║
 ║   - /api/horarios, /api/config             ║
-║   - /api/gestores, /health                 ║
+║   - /api/gestores, /api/listas-presenca    ║
+║   - /api/registros-horas-professores       ║
+║   - /api/avaliacoes-nivel                  ║
+║   - /api/conquistas, /api/objetivos        ║
+║   - /api/auto-avaliacoes, /health          ║
 ╚════════════════════════════════════════════╝
     `);
   });

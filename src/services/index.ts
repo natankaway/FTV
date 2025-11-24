@@ -16,6 +16,12 @@ export { aulasExperimentaisService } from './aulasExperimentaisService';
 export { horariosService } from './horariosService';
 export { configService } from './configService';
 export { gestoresService } from './gestoresService';
+export { listasPresencaService } from './listasPresencaService';
+export { registrosHorasProfessoresService } from './registrosHorasProfessoresService';
+export { avaliacoesNivelService } from './avaliacoesNivelService';
+export { conquistasService } from './conquistasService';
+export { objetivosPessoaisService } from './objetivosPessoaisService';
+export { autoAvaliacoesService } from './autoAvaliacoesService';
 
 // Re-export types
 export type { LoginCredentials, LoginResponse } from './authService';
