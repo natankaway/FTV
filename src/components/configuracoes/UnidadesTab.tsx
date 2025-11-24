@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Search, 
-  MapPin, 
-  Phone, 
-  Mail, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Eye,
+  EyeOff,
+  Search,
+  MapPin,
+  Phone,
+  Mail,
   Clock,
   Users,
   AlertTriangle
@@ -17,6 +17,7 @@ import {
 import { generateId, getStatusBadgeClass } from '@/utils';
 import { UnidadeForm } from './UnidadeForm';
 import type { Unidade, UnidadeFormData } from '@/types';
+import { unidadesService } from '@/services';
 
 export const UnidadesTab: React.FC = () => {
   const { dadosMockados, setUnidades, dadosMockados: { agendamentos, presencas, alunos } } = useAppState();
@@ -64,27 +65,38 @@ export const UnidadesTab: React.FC = () => {
     setIsFormOpen(true);
   }, []);
 
-  const handleToggleActive = useCallback((unidade: Unidade) => {
-    setUnidades(prev => prev.map(u => 
-      u.id === unidade.id ? { ...u, ativa: !u.ativa } : u
-    ));
-    
-    addNotification({
-      type: 'success',
-      title: unidade.ativa ? 'Unidade desativada' : 'Unidade ativada',
-      message: `${unidade.nome} foi ${unidade.ativa ? 'desativada' : 'ativada'} com sucesso`
-    });
+  const handleToggleActive = useCallback(async (unidade: Unidade) => {
+    try {
+      await unidadesService.update(unidade.id.toString(), { ativa: !unidade.ativa });
+
+      setUnidades(prev => prev.map(u =>
+        u.id === unidade.id ? { ...u, ativa: !u.ativa } : u
+      ));
+
+      addNotification({
+        type: 'success',
+        title: unidade.ativa ? 'Unidade desativada' : 'Unidade ativada',
+        message: `${unidade.nome} foi ${unidade.ativa ? 'desativada' : 'ativada'} com sucesso`
+      });
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Não foi possível alterar o status da unidade'
+      });
+    }
   }, [setUnidades, addNotification]);
 
-  const handleDelete = useCallback((unidade: Unidade) => {
+  const handleDelete = useCallback(async (unidade: Unidade) => {
     const deleteCheck = checkCanDelete(unidade.nome);
-    
+
     if (!deleteCheck.canDelete) {
       const dependencies = [];
       if (deleteCheck.dependencies.alunos) dependencies.push('alunos');
       if (deleteCheck.dependencies.agendamentos) dependencies.push('agendamentos');
       if (deleteCheck.dependencies.presencas) dependencies.push('presenças');
-      
+
       addNotification({
         type: 'error',
         title: 'Não é possível excluir',
@@ -96,48 +108,81 @@ export const UnidadesTab: React.FC = () => {
     const confirmed = window.confirm(
       `Tem certeza que deseja excluir a unidade "${unidade.nome}"?\n\nEsta ação não pode ser desfeita.`
     );
-    
+
     if (confirmed) {
-      setUnidades(prev => prev.filter(u => u.id !== unidade.id));
-      
-      addNotification({
-        type: 'success',
-        title: 'Unidade excluída',
-        message: `${unidade.nome} foi excluída com sucesso`
-      });
+      try {
+        await unidadesService.delete(unidade.id.toString());
+        setUnidades(prev => prev.filter(u => u.id !== unidade.id));
+
+        addNotification({
+          type: 'success',
+          title: 'Unidade excluída',
+          message: `${unidade.nome} foi excluída com sucesso`
+        });
+      } catch (error) {
+        console.error('Erro ao excluir unidade:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Não foi possível excluir a unidade'
+        });
+      }
     }
   }, [checkCanDelete, setUnidades, addNotification]);
 
-  const handleSave = useCallback((formData: UnidadeFormData) => {
-    if (editingUnidade) {
-      // Update existing unit
-      setUnidades(prev => prev.map(u => 
-        u.id === editingUnidade.id ? { ...u, ...formData } : u
-      ));
-      
-      addNotification({
-        type: 'success',
-        title: 'Unidade atualizada',
-        message: `${formData.nome} foi atualizada com sucesso`
-      });
-    } else {
-      // Add new unit
-      const newUnidade: Unidade = {
-        id: generateId(),
-        ...formData
+  const handleSave = useCallback(async (formData: UnidadeFormData) => {
+    try {
+      const apiData = {
+        nome: formData.nome,
+        endereco: formData.endereco,
+        telefone: formData.telefone,
+        email: formData.email,
+        ativa: formData.ativa
       };
-      
-      setUnidades(prev => [...prev, newUnidade]);
-      
+
+      if (editingUnidade) {
+        // Update via API
+        await unidadesService.update(editingUnidade.id.toString(), apiData);
+
+        // Update local state
+        setUnidades(prev => prev.map(u =>
+          u.id === editingUnidade.id ? { ...u, ...formData } : u
+        ));
+
+        addNotification({
+          type: 'success',
+          title: 'Unidade atualizada',
+          message: `${formData.nome} foi atualizada com sucesso`
+        });
+      } else {
+        // Create via API
+        const newUnidade = await unidadesService.create(apiData);
+
+        // Add to local state with ID from API
+        const unidadeData: Unidade = {
+          id: newUnidade.id || generateId(),
+          ...formData
+        };
+
+        setUnidades(prev => [...prev, unidadeData]);
+
+        addNotification({
+          type: 'success',
+          title: 'Unidade criada',
+          message: `${formData.nome} foi criada com sucesso`
+        });
+      }
+
+      setIsFormOpen(false);
+      setEditingUnidade(null);
+    } catch (error) {
+      console.error('Erro ao salvar unidade:', error);
       addNotification({
-        type: 'success',
-        title: 'Unidade criada',
-        message: `${formData.nome} foi criada com sucesso`
+        type: 'error',
+        title: 'Erro ao salvar',
+        message: 'Não foi possível salvar a unidade'
       });
     }
-    
-    setIsFormOpen(false);
-    setEditingUnidade(null);
   }, [editingUnidade, setUnidades, addNotification]);
 
   const handleCancel = useCallback(() => {

@@ -6,8 +6,20 @@ export interface CreateProfessorData {
   email: string;
   telefone?: string;
   senha?: string;
-  especialidade?: string;
-  unidade_id?: string;
+  especialidades?: string[];
+  unidades?: string[];
+  unidade_principal?: string;
+  tipo_pagamento?: 'fixo' | 'hora-fixa' | 'horas-variaveis';
+  valor_fixo?: number;
+  valor_hora_fixa?: number;
+  valores_horas?: {
+    umaHora: number;
+    duasHoras: number;
+    tresOuMaisHoras: number;
+  };
+  valor_aulao?: number;
+  experiencia?: string;
+  observacoes?: string;
 }
 
 export interface UpdateProfessorData extends Partial<CreateProfessorData> {

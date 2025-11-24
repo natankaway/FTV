@@ -4,6 +4,7 @@ import { Button } from '@/components/common';
 import { X, Upload, Plus, Minus, Eye, EyeOff } from 'lucide-react';
 import type { Aluno, AlunoFormData } from '@/types';
 import { GraduationCap } from 'lucide-react';
+import { alunosService } from '@/services';
 
 interface NovoAlunoModalProps {
   isOpen: boolean;
@@ -236,7 +237,7 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -244,33 +245,59 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const finalFormData = {
-        ...formData,
-        nomesCheckIn: showCheckInNames ? checkInNames.filter(name => name.trim()) : []
+      // Find unidade_id from unidade name
+      const unidadeObj = unidades.find(u => u.nome === formData.unidade);
+      const unidadeId = unidadeObj?.id?.toString() || formData.unidade;
+
+      // Prepare data for API (snake_case)
+      const apiData = {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        senha: formData.senha,
+        tipo_plano: formData.tipoPlano as 'mensalidade' | 'plataforma' | 'experimental',
+        plano_id: formData.tipoPlano === 'mensalidade' ? formData.planoId : undefined,
+        plataforma_parceira: formData.tipoPlano === 'plataforma' ? formData.plataformaParceira : undefined,
+        unidade_id: unidadeId,
+        vencimento: formData.tipoPlano === 'mensalidade' ? formData.vencimento : undefined,
+        nivel: formData.nivel,
+        objetivo: formData.objetivo,
+        status: formData.status,
+        ativo: formData.ativo,
+        nomes_checkin: showCheckInNames ? checkInNames.filter(name => name.trim()) : undefined
       };
 
       if (editingAluno) {
-        // Update existing aluno
-        setAlunos(prev => prev.map(aluno => 
-          aluno.id === editingAluno.id 
-            ? { ...aluno, ...finalFormData }
+        // Update existing aluno via API
+        const updatedAluno = await alunosService.update(editingAluno.id, apiData);
+
+        // Update local state with returned data
+        setAlunos(prev => prev.map(aluno =>
+          aluno.id === editingAluno.id
+            ? {
+                ...aluno,
+                ...formData,
+                nomesCheckIn: showCheckInNames ? checkInNames.filter(name => name.trim()) : []
+              }
             : aluno
         ));
-        
+
         addNotification({
           type: 'success',
           title: 'Aluno atualizado',
           message: `${formData.nome} foi atualizado com sucesso!`
         });
       } else {
-        // Create new aluno
-        const newAluno: Aluno = {
-          ...finalFormData,
-          id: Date.now(),
-        };
+        // Create new aluno via API
+        const newAluno = await alunosService.create(apiData);
 
-        setAlunos(prev => [...prev, newAluno]);
-        
+        // Add to local state with the ID from API
+        setAlunos(prev => [...prev, {
+          ...formData,
+          id: newAluno.id || Date.now(),
+          nomesCheckIn: showCheckInNames ? checkInNames.filter(name => name.trim()) : []
+        }]);
+
         addNotification({
           type: 'success',
           title: 'Aluno criado',
@@ -280,6 +307,7 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
 
       onClose();
     } catch (error) {
+      console.error('Erro ao salvar aluno:', error);
       addNotification({
         type: 'error',
         title: 'Erro',
@@ -288,7 +316,7 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, editingAluno, setAlunos, addNotification, onClose, showCheckInNames, checkInNames]);
+  }, [formData, editingAluno, setAlunos, addNotification, onClose, showCheckInNames, checkInNames, unidades]);
 
   const handleInputChange = useCallback((field: keyof AlunoFormData, value: any) => {
     if (field === 'telefone') {
