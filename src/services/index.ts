@@ -22,6 +22,7 @@ export { avaliacoesNivelService } from './avaliacoesNivelService';
 export { conquistasService } from './conquistasService';
 export { objetivosPessoaisService } from './objetivosPessoaisService';
 export { autoAvaliacoesService } from './autoAvaliacoesService';
+export { metasGeraisService } from './metasGeraisService';
 
 // Re-export types
 export type { LoginCredentials, LoginResponse } from './authService';

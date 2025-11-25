@@ -1,30 +1,32 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
-import { 
-  Target, 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
+import {
+  Target,
+  Plus,
+  Search,
+  Edit3,
+  Trash2,
   TrendingUp,
   Clock,
   CheckCircle,
   AlertCircle,
   Calendar,
   User,
-  Building2
+  Building2,
+  Loader2
 } from 'lucide-react';
 import { MetaFormModal } from './MetaFormModal';
 import type { MetaGeral } from '@/types';
+import { metasGeraisService } from '@/services';
 
 type StatusFilter = 'todos' | 'em-andamento' | 'concluida' | 'atrasada';
 type EscopoFilter = 'todos' | 'CT' | 'Unidade';
 
 export const MetasPage: React.FC = () => {
-  const { 
-    dadosMockados, 
-    userLogado, 
-    setMetasGerais 
+  const {
+    dadosMockados,
+    userLogado,
+    setMetasGerais
   } = useAppState();
   const { addNotification } = useNotifications();
 
@@ -34,9 +36,43 @@ export const MetasPage: React.FC = () => {
   const [unidadeFilter, setUnidadeFilter] = useState('todas');
   const [showModal, setShowModal] = useState(false);
   const [editingMeta, setEditingMeta] = useState<MetaGeral | null>(null);
+  const [metas, setMetas] = useState<MetaGeral[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Verificar acesso
   const hasAccess = userLogado?.perfil === 'admin' || userLogado?.perfil === 'gestor';
+
+  // Carregar metas do Supabase
+  useEffect(() => {
+    const loadMetas = async () => {
+      if (!hasAccess) return;
+
+      setIsLoading(true);
+      try {
+        const params: any = {};
+
+        // Filtrar por perfil - gestores só veem metas CT ou de suas unidades
+        if (userLogado?.perfil === 'gestor') {
+          // Backend pode implementar filtro mais específico no futuro
+          // Por ora, carregamos todas e filtramos no frontend
+        }
+
+        const data = await metasGeraisService.getAll(params);
+        setMetas(data);
+      } catch (error) {
+        console.error('Erro ao carregar metas:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao carregar',
+          message: 'Não foi possível carregar as metas'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMetas();
+  }, [hasAccess, userLogado, addNotification]);
 
   // Função para calcular status da meta
   const getMetaStatus = useCallback((meta: MetaGeral) => {
@@ -51,13 +87,13 @@ export const MetasPage: React.FC = () => {
 
   // Filtrar metas baseado no perfil do usuário
   const metasFiltradas = useMemo(() => {
-    let metas = dadosMockados.metasGerais || [];
+    let filtradas = [...metas];
 
     // Filtro por perfil
     if (userLogado?.perfil === 'gestor') {
       const unidadesGestor = userLogado.unidades || [];
-      metas = metas.filter(meta => 
-        meta.escopo === 'CT' || 
+      filtradas = filtradas.filter(meta =>
+        meta.escopo === 'CT' ||
         (meta.escopo === 'Unidade' && meta.unidadeId && unidadesGestor.includes(meta.unidadeId))
       );
     }
@@ -65,7 +101,7 @@ export const MetasPage: React.FC = () => {
     // Filtro por busca
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      metas = metas.filter(meta =>
+      filtradas = filtradas.filter(meta =>
         meta.titulo.toLowerCase().includes(term) ||
         meta.descricao?.toLowerCase().includes(term) ||
         meta.responsavel?.toLowerCase().includes(term)
@@ -74,23 +110,23 @@ export const MetasPage: React.FC = () => {
 
     // Filtro por status
     if (statusFilter !== 'todos') {
-      metas = metas.filter(meta => getMetaStatus(meta) === statusFilter);
+      filtradas = filtradas.filter(meta => getMetaStatus(meta) === statusFilter);
     }
 
     // Filtro por escopo
     if (escopoFilter !== 'todos') {
-      metas = metas.filter(meta => meta.escopo === escopoFilter);
+      filtradas = filtradas.filter(meta => meta.escopo === escopoFilter);
     }
 
     // Filtro por unidade
     if (unidadeFilter !== 'todas') {
-      metas = metas.filter(meta => 
+      filtradas = filtradas.filter(meta =>
         meta.escopo === 'CT' || meta.unidadeId === unidadeFilter
       );
     }
 
-    return metas;
-  }, [dadosMockados.metasGerais, userLogado, searchTerm, statusFilter, escopoFilter, unidadeFilter, getMetaStatus]);
+    return filtradas;
+  }, [metas, userLogado, searchTerm, statusFilter, escopoFilter, unidadeFilter, getMetaStatus]);
 
   // Calcular estatísticas
   const estatisticas = useMemo(() => {
@@ -124,7 +160,7 @@ export const MetasPage: React.FC = () => {
     setShowModal(true);
   }, [userLogado, addNotification]);
 
-  const handleDeleteMeta = useCallback((meta: MetaGeral) => {
+  const handleDeleteMeta = useCallback(async (meta: MetaGeral) => {
     // Verificar permissão para excluir
     if (userLogado?.perfil === 'gestor' && meta.escopo === 'Unidade') {
       const unidadesGestor = userLogado.unidades || [];
@@ -139,52 +175,80 @@ export const MetasPage: React.FC = () => {
     }
 
     if (window.confirm(`Tem certeza que deseja excluir a meta "${meta.titulo}"?`)) {
-      setMetasGerais(prev => prev.filter(m => m.id !== meta.id));
-      addNotification({
-        type: 'success',
-        title: 'Meta excluída',
-        message: 'Meta excluída com sucesso'
-      });
+      try {
+        await metasGeraisService.delete(meta.id);
+        setMetas(prev => prev.filter(m => m.id !== meta.id));
+        addNotification({
+          type: 'success',
+          title: 'Meta excluída',
+          message: 'Meta excluída com sucesso'
+        });
+      } catch (error) {
+        console.error('Erro ao excluir meta:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao excluir',
+          message: 'Não foi possível excluir a meta'
+        });
+      }
     }
-  }, [userLogado, setMetasGerais, addNotification]);
+  }, [userLogado, addNotification]);
 
-  const handleSaveMeta = useCallback((metaData: Omit<MetaGeral, 'id' | 'criadoEm' | 'atualizadoEm'>) => {
-    const agora = new Date().toISOString();
-    
-    if (editingMeta) {
-      // Editar meta existente
-      const metaAtualizada: MetaGeral = {
-        ...editingMeta,
-        ...metaData,
-        atualizadoEm: agora
-      };
-      
-      setMetasGerais(prev => prev.map(m => m.id === editingMeta.id ? metaAtualizada : m));
+  const handleSaveMeta = useCallback(async (metaData: Omit<MetaGeral, 'id' | 'criadoEm' | 'atualizadoEm'>) => {
+    try {
+      if (editingMeta) {
+        // Editar meta existente
+        const updateData = {
+          titulo: metaData.titulo,
+          descricao: metaData.descricao,
+          escopo: metaData.escopo,
+          unidade_id: metaData.unidadeId,
+          valor_alvo: metaData.valorAlvo,
+          valor_atual: metaData.valorAtual,
+          prazo: metaData.prazo,
+          responsavel: metaData.responsavel
+        };
+
+        const metaAtualizada = await metasGeraisService.update(editingMeta.id, updateData);
+        setMetas(prev => prev.map(m => m.id === editingMeta.id ? metaAtualizada : m));
+        addNotification({
+          type: 'success',
+          title: 'Meta atualizada',
+          message: 'Meta atualizada com sucesso'
+        });
+      } else {
+        // Criar nova meta
+        const createData = {
+          titulo: metaData.titulo,
+          descricao: metaData.descricao,
+          escopo: metaData.escopo,
+          unidade_id: metaData.unidadeId,
+          valor_alvo: metaData.valorAlvo,
+          valor_atual: metaData.valorAtual,
+          prazo: metaData.prazo,
+          responsavel: metaData.responsavel
+        };
+
+        const novaMeta = await metasGeraisService.create(createData);
+        setMetas(prev => [...prev, novaMeta]);
+        addNotification({
+          type: 'success',
+          title: 'Meta criada',
+          message: 'Meta criada com sucesso'
+        });
+      }
+
+      setShowModal(false);
+      setEditingMeta(null);
+    } catch (error) {
+      console.error('Erro ao salvar meta:', error);
       addNotification({
-        type: 'success',
-        title: 'Meta atualizada',
-        message: 'Meta atualizada com sucesso'
-      });
-    } else {
-      // Criar nova meta
-      const novaMeta: MetaGeral = {
-        id: Date.now().toString(),
-        ...metaData,
-        criadoEm: agora,
-        atualizadoEm: agora
-      };
-      
-      setMetasGerais(prev => [...prev, novaMeta]);
-      addNotification({
-        type: 'success',
-        title: 'Meta criada',
-        message: 'Meta criada com sucesso'
+        type: 'error',
+        title: 'Erro ao salvar',
+        message: 'Não foi possível salvar a meta'
       });
     }
-    
-    setShowModal(false);
-    setEditingMeta(null);
-  }, [editingMeta, setMetasGerais, addNotification]);
+  }, [editingMeta, addNotification]);
 
   const formatarProgresso = useCallback((meta: MetaGeral) => {
     return Math.min(100, (meta.valorAtual / meta.valorAlvo) * 100);
@@ -205,6 +269,19 @@ export const MetasPage: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             Você não tem permissão para acessar esta funcionalidade.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Carregando metas...
+          </h3>
         </div>
       </div>
     );

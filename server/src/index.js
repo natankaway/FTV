@@ -32,6 +32,7 @@ import avaliacoesNivelRoutes from './routes/avaliacoesNivelRoutes.js';
 import conquistasRoutes from './routes/conquistasRoutes.js';
 import objetivosPessoaisRoutes from './routes/objetivosPessoaisRoutes.js';
 import autoAvaliacoesRoutes from './routes/autoAvaliacoesRoutes.js';
+import metasGeraisRoutes from './routes/metasGeraisRoutes.js';
 
 // Configuração
 dotenv.config();
@@ -96,6 +97,7 @@ app.use('/api/avaliacoes-nivel', avaliacoesNivelRoutes);
 app.use('/api/conquistas', conquistasRoutes);
 app.use('/api/objetivos-pessoais', objetivosPessoaisRoutes);
 app.use('/api/auto-avaliacoes', autoAvaliacoesRoutes);
+app.use('/api/metas-gerais', metasGeraisRoutes);
 
 // Middleware de erro 404
 app.use(notFound);
