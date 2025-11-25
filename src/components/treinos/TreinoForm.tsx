@@ -2,8 +2,9 @@ import React, { memo, useCallback, useEffect, useState } from 'react';
 import { useAppState } from '@/contexts';
 import { Button } from '@/components/common';
 import { Save, X, Clock, Target, BookOpen, MapPin, User, Layers } from 'lucide-react';
-import type { TreinoFormData } from '@/types';
+import type { TreinoFormData, Professor } from '@/types';
 import type { PranchetaData } from '@/types/canvas';
+import { professoresService } from '@/services';
 
 interface TreinoFormProps {
   treino?: Partial<TreinoFormData> & { id?: number | string; pranchetaData?: PranchetaData };
@@ -22,6 +23,21 @@ export const TreinoForm: React.FC<TreinoFormProps> = memo(({
 }) => {
   const { dadosMockados, userLogado } = useAppState();
   const [formData, setFormData] = useState<Partial<TreinoFormData>>({});
+  const [professores, setProfessores] = useState<Professor[]>([]);
+
+  // Carregar professores do Supabase
+  useEffect(() => {
+    const loadProfessores = async () => {
+      try {
+        const data = await professoresService.getAll({ ativo: true });
+        setProfessores(data);
+      } catch (error) {
+        console.error('Erro ao carregar professores:', error);
+      }
+    };
+
+    loadProfessores();
+  }, []);
 
   useEffect(() => {
     setFormData({
@@ -118,7 +134,7 @@ export const TreinoForm: React.FC<TreinoFormProps> = memo(({
               className={formElementClasses} // <-- ALTERADO
             >
               <option value="">Selecione um professor</option>
-              {dadosMockados.professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
           </div>
 

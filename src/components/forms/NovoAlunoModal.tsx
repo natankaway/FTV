@@ -54,7 +54,7 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
         nome: editingAluno.nome,
         email: editingAluno.email,
         telefone: editingAluno.telefone,
-        senha: editingAluno.senha,
+        senha: '', // Senha vazia no modo de edição (opcional alterar)
         unidade: editingAluno.unidade,
         tipoPlano: editingAluno.tipoPlano,
         planoId: editingAluno.planoId || 1,
@@ -140,10 +140,10 @@ export const NovoAlunoModal: React.FC<NovoAlunoModalProps> = ({
       }
     }
 
-    // Password validation
-    if (!formData.senha.trim()) {
+    // Password validation - obrigatória apenas ao criar, opcional ao editar
+    if (!editingAluno && (!formData.senha || !formData.senha.trim())) {
       newErrors.senha = 'Senha é obrigatória';
-    } else if (formData.senha.length < 8) {
+    } else if (formData.senha && formData.senha.trim() && formData.senha.length < 8) {
       newErrors.senha = 'Senha deve ter pelo menos 8 caracteres';
     }
 

@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import React, { memo, useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button, Input, Modal } from '@/components/common';
 import { gestoresService } from '@/services';
@@ -39,12 +39,12 @@ interface GestorFormErrors {
 export const GestoresPage: React.FC = memo(() => {
   const { userLogado, dadosMockados, setGestores, setUnidades } = useAppState();
   const { addNotification } = useNotifications();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGestor, setEditingGestor] = useState<Gestor | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState<GestorFormData>({
     nome: '',
     email: '',
@@ -54,8 +54,34 @@ export const GestoresPage: React.FC = memo(() => {
     unidades: [],
     ativo: true
   });
-  
+
   const [errors, setErrors] = useState<GestorFormErrors>({});
+  const [gestores, setGestoresState] = useState<Gestor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carregar gestores do Supabase
+  useEffect(() => {
+    const loadGestores = async () => {
+      if (userLogado?.perfil !== 'admin') return;
+
+      setIsLoading(true);
+      try {
+        const data = await gestoresService.getAll();
+        setGestoresState(data);
+      } catch (error) {
+        console.error('Erro ao carregar gestores:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao carregar',
+          message: 'Não foi possível carregar a lista de gestores'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGestores();
+  }, [userLogado, addNotification]);
 
   // Access control - only admin can access
   if (userLogado?.perfil !== 'admin') {
@@ -72,7 +98,19 @@ export const GestoresPage: React.FC = memo(() => {
     );
   }
 
-  const gestores = dadosMockados.gestores;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Users className="h-16 w-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Carregando gestores...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   const unidades = dadosMockados.unidades;
 
   // Filter gestores based on search
@@ -194,7 +232,7 @@ export const GestoresPage: React.FC = memo(() => {
           ativo: formData.ativo
         });
 
-        setGestores(prev => prev.map(g => g.id === editingGestor.id ? { ...g, ...updatedGestor, unidades: formData.unidades } : g));
+        setGestoresState(prev => prev.map(g => g.id === editingGestor.id ? { ...g, ...updatedGestor, unidades: formData.unidades } : g));
         updateUnidadesGestorId(editingGestor.id, formData.unidades, editingGestor.unidades);
 
         addNotification({
@@ -213,7 +251,7 @@ export const GestoresPage: React.FC = memo(() => {
           permissoes: ['gestor']
         });
 
-        setGestores(prev => [...prev, { ...newGestor, unidades: formData.unidades, ativo: true }]);
+        setGestoresState(prev => [...prev, { ...newGestor, unidades: formData.unidades, ativo: true }]);
         updateUnidadesGestorId(newGestor.id, formData.unidades);
 
         addNotification({
@@ -232,13 +270,13 @@ export const GestoresPage: React.FC = memo(() => {
         message: 'Não foi possível salvar o gestor. Tente novamente.'
       });
     }
-  }, [formData, editingGestor, setGestores, updateUnidadesGestorId, validateForm, addNotification, closeModal]);
+  }, [formData, editingGestor, updateUnidadesGestorId, validateForm, addNotification, closeModal]);
 
   const toggleGestorStatus = useCallback(async (gestor: Gestor) => {
     const newStatus = !gestor.ativo;
     try {
       await gestoresService.update(gestor.id as unknown as number, { ativo: newStatus });
-      setGestores(prev => prev.map(g =>
+      setGestoresState(prev => prev.map(g =>
         g.id === gestor.id ? { ...g, ativo: newStatus } : g
       ));
 
@@ -255,7 +293,7 @@ export const GestoresPage: React.FC = memo(() => {
         message: 'Não foi possível alterar o status do gestor.'
       });
     }
-  }, [setGestores, addNotification]);
+  }, [addNotification]);
 
   const deleteGestor = useCallback(async (gestor: Gestor) => {
     // Check if gestor is assigned to any active unit
@@ -273,7 +311,7 @@ export const GestoresPage: React.FC = memo(() => {
     if (window.confirm(`Tem certeza que deseja excluir o gestor ${gestor.nome}?`)) {
       try {
         await gestoresService.delete(gestor.id as unknown as number);
-        setGestores(prev => prev.filter(g => g.id !== gestor.id));
+        setGestoresState(prev => prev.filter(g => g.id !== gestor.id));
         // Remove from any units that might reference this gestor
         setUnidades(prev => prev.map(u =>
           u.gestorId === gestor.id ? { ...u, gestorId: 0 } : u
@@ -293,7 +331,7 @@ export const GestoresPage: React.FC = memo(() => {
         });
       }
     }
-  }, [unidades, setGestores, setUnidades, addNotification]);
+  }, [unidades, setUnidades, addNotification]);
 
   const handleUnidadeChange = useCallback((unidadeName: string, checked: boolean) => {
     setFormData(prev => ({

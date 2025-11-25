@@ -131,7 +131,7 @@ export const getAutoAvaliacoesAluno = async (req, res) => {
         .map(([ponto, count]) => ({ ponto, count }));
 
       // Pontos fortes mais mencionados
-      const pontosFortes Count = {};
+      const pontosFortesCount = {};
       data.forEach(av => {
         if (av.pontos_fortes && Array.isArray(av.pontos_fortes)) {
           av.pontos_fortes.forEach(pf => {

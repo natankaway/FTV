@@ -1,11 +1,12 @@
-import React, { useState, useCallback, memo, useMemo } from 'react';
+import React, { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button } from '@/components/common';
 import { TreinoForm } from './TreinoForm';
 import { PranchetaTatica } from './PranchetaTatica';
-import { Plus, Edit, Trash, BookOpen, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash, BookOpen, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import type { Treino, TreinoFormData } from '@/types';
 import type { PranchetaData, CanvasItemUnion } from '@/types/canvas';
+import { treinosService } from '@/services';
 
 // Estende o tipo Treino para garantir que ele possa ter dados da prancheta
 type TreinoComPrancheta = Treino & { pranchetaData?: PranchetaData };
@@ -16,16 +17,43 @@ export const TreinosManager: React.FC = memo(() => {
 
   // Estado que controla o treino ativo para edição ou criação
   const [activeTreino, setActiveTreino] = useState<TreinoComPrancheta | null>(null);
+  const [treinos, setTreinosState] = useState<TreinoComPrancheta[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carregar treinos do Supabase
+  useEffect(() => {
+    const loadTreinos = async () => {
+      if (!userLogado) return;
+
+      setIsLoading(true);
+      try {
+        const params: any = {};
+        if (userLogado.perfil !== 'admin') {
+          params.professor_id = userLogado.id;
+        }
+
+        const data = await treinosService.getAll(params);
+        setTreinosState(data as TreinoComPrancheta[]);
+      } catch (error) {
+        console.error('Erro ao carregar treinos:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao carregar',
+          message: 'Não foi possível carregar os treinos'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTreinos();
+  }, [userLogado, addNotification]);
 
   // Filtra os treinos exibidos na lista
   const filteredTreinos = useMemo(() => {
-    let filtered = dadosMockados.treinos as TreinoComPrancheta[];
-    if (userLogado?.perfil !== 'admin') {
-      filtered = filtered.filter(treino => treino.professorId === userLogado?.id);
-    }
-    // Adicione aqui a lógica de busca e filtro se desejar
-    return filtered.sort((a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime());
-  }, [dadosMockados.treinos, userLogado]);
+    // Os treinos já vêm filtrados do backend baseado no perfil do usuário
+    return treinos.sort((a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime());
+  }, [treinos]);
 
   // Abre a tela para criar um novo treino
   const handleNewTreino = useCallback(() => {
@@ -71,38 +99,59 @@ export const TreinosManager: React.FC = memo(() => {
   }, []);
 
   // Salva o treino (cria um novo ou atualiza um existente)
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!activeTreino || !activeTreino.nome) {
       addNotification({ type: 'error', title: 'Erro', message: 'O título do treino é obrigatório.' });
       return;
     }
 
-    const professor = dadosMockados.professores.find(p => p.id === activeTreino.professorId);
-
-    if (activeTreino.id && activeTreino.id !== 0) {
-      // Atualiza um treino existente
-      setTreinos(prev => prev.map(t => t.id === activeTreino.id ? { ...t, ...activeTreino, professor: professor?.nome } : t));
-      addNotification({ type: 'success', title: 'Treino atualizado!' });
-    } else {
-      // Cria um novo treino
-      const novoTreino: TreinoComPrancheta = {
-        ...activeTreino,
-        id: Date.now(), // Gera um ID único
-        professor: professor?.nome,
+    try {
+      const treinoData = {
+        nome: activeTreino.nome,
+        tipo: activeTreino.tipo,
+        nivel: activeTreino.nivel,
+        duracao: activeTreino.duracao,
+        objetivo: activeTreino.objetivo,
+        equipamentos: activeTreino.equipamentos,
+        exercicios: activeTreino.exercicios,
+        professor_id: activeTreino.professorId,
+        unidade_id: activeTreino.unidade,
+        data: activeTreino.data,
+        status: activeTreino.status,
+        prancheta_data: activeTreino.pranchetaData
       };
-      setTreinos(prev => [...prev, novoTreino]);
-      addNotification({ type: 'success', title: 'Treino criado com sucesso!' });
+
+      if (activeTreino.id && activeTreino.id !== 0) {
+        // Atualiza um treino existente
+        await treinosService.update(activeTreino.id, treinoData);
+        setTreinosState(prev => prev.map(t => t.id === activeTreino.id ? activeTreino : t));
+        addNotification({ type: 'success', title: 'Treino atualizado!' });
+      } else {
+        // Cria um novo treino
+        const novoTreino = await treinosService.create(treinoData);
+        setTreinosState(prev => [...prev, { ...novoTreino, pranchetaData: activeTreino.pranchetaData } as TreinoComPrancheta]);
+        addNotification({ type: 'success', title: 'Treino criado com sucesso!' });
+      }
+      setActiveTreino(null); // Volta para a lista
+    } catch (error) {
+      console.error('Erro ao salvar treino:', error);
+      addNotification({ type: 'error', title: 'Erro ao salvar', message: 'Não foi possível salvar o treino' });
     }
-    setActiveTreino(null); // Volta para a lista
-  }, [activeTreino, setTreinos, addNotification, dadosMockados.professores]);
+  }, [activeTreino, addNotification]);
 
   // Deleta um treino da lista
-  const handleDelete = useCallback((treinoId: number) => {
+  const handleDelete = useCallback(async (treinoId: number) => {
     if (window.confirm('Tem certeza que deseja excluir este treino?')) {
-      setTreinos(prev => prev.filter(t => t.id !== treinoId));
-      addNotification({ type: 'success', title: 'Treino excluído' });
+      try {
+        await treinosService.delete(treinoId);
+        setTreinosState(prev => prev.filter(t => t.id !== treinoId));
+        addNotification({ type: 'success', title: 'Treino excluído' });
+      } catch (error) {
+        console.error('Erro ao excluir treino:', error);
+        addNotification({ type: 'error', title: 'Erro ao excluir', message: 'Não foi possível excluir o treino' });
+      }
     }
-  }, [setTreinos, addNotification]);
+  }, [addNotification]);
 
   // ================= RENDERIZAÇÃO =================
 
@@ -128,7 +177,7 @@ export const TreinosManager: React.FC = memo(() => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <TreinoForm 
+            <TreinoForm
               treino={activeTreino}
               onSave={handleSave}
               onCancel={handleCancel}
@@ -142,6 +191,20 @@ export const TreinosManager: React.FC = memo(() => {
               onPranchetaChange={handlePranchetaChange}
             />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // RENDERIZA ESTADO DE LOADING
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Carregando treinos...
+          </h3>
         </div>
       </div>
     );

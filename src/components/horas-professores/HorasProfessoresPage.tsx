@@ -1,15 +1,16 @@
 // src/components/horas-professores/HorasProfessoresPage.tsx
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import React, { memo, useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button } from '@/components/common';
 import { NovoRegistroHorasModal } from '@/components/forms/NovoRegistroHorasModal';
-import { 
-  Clock, 
-  Plus, 
-  Search, 
+import { professoresService, registrosHorasProfessoresService } from '@/services';
+import {
+  Clock,
+  Plus,
+  Search,
   Filter,
-  Download, 
-  Edit, 
+  Download,
+  Edit,
   Trash,
   User,
   Calendar,
@@ -186,7 +187,7 @@ const RegistroCard: React.FC<RegistroCardProps> = ({
 export const HorasProfessoresPage: React.FC = memo(() => {
   const { dadosMockados, userLogado, unidadeSelecionada, setRegistrosHorasProfessores } = useAppState();
   const { addNotification } = useNotifications();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [professorFilter, setProfessorFilter] = useState<string>('todos');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
@@ -196,40 +197,76 @@ export const HorasProfessoresPage: React.FC = memo(() => {
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroHorasProfessor | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  const [professores, setProfessores] = useState<Professor[]>([]);
+  const [registros, setRegistros] = useState<RegistroHorasProfessor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Verificar permissões
   const canManage = userLogado?.perfil === 'admin' || userLogado?.perfil === 'gestor';
   const canView = canManage || userLogado?.perfil === 'professor';
 
+  // Carregar dados do Supabase
+  useEffect(() => {
+    const loadData = async () => {
+      if (!userLogado) return;
+
+      setIsLoading(true);
+      try {
+        // Carregar professores
+        const professoresData = await professoresService.getAll({ ativo: true });
+        setProfessores(professoresData);
+
+        // Carregar registros com filtros baseados no perfil
+        const params: any = {};
+
+        if (userLogado.perfil === 'gestor') {
+          params.unidade_id = unidadeSelecionada;
+        } else if (userLogado.perfil === 'professor') {
+          params.professor_id = userLogado.id;
+        }
+
+        const registrosData = await registrosHorasProfessoresService.getAll(params);
+        setRegistros(registrosData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao carregar',
+          message: 'Não foi possível carregar os dados'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [userLogado, unidadeSelecionada, addNotification]);
+
   // Filtrar registros
   const filteredRegistros = useMemo(() => {
-    let registros = dadosMockados.registrosHorasProfessores || [];
+    let filtered = [...registros];
 
-    // Filtro por perfil/unidade
-    if (userLogado?.perfil === 'gestor') {
-      registros = registros.filter(r => r.unidade === unidadeSelecionada);
-    } else if (userLogado?.perfil === 'professor') {
-      registros = registros.filter(r => r.professorId === userLogado.id);
-    }
+    // Nota: Filtros de perfil/unidade já foram aplicados no carregamento inicial
 
     // Filtros de pesquisa
     if (searchTerm) {
-      registros = registros.filter(r => 
-        r.professorNome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      filtered = filtered.filter(r =>
+        r.professorNome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.unidade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.observacoes?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (professorFilter !== 'todos') {
-      registros = registros.filter(r => r.professorId === parseInt(professorFilter));
+      filtered = filtered.filter(r => r.professorId === parseInt(professorFilter));
     }
 
     if (tipoFilter !== 'todos') {
-      registros = registros.filter(r => r.tipoAtividade === tipoFilter);
+      filtered = filtered.filter(r => r.tipoAtividade === tipoFilter);
     }
 
     if (unidadeFilter !== 'todas') {
-      registros = registros.filter(r => r.unidade === unidadeFilter);
+      filtered = filtered.filter(r => r.unidade === unidadeFilter);
     }
 
     // Filtro por período
@@ -237,10 +274,10 @@ export const HorasProfessoresPage: React.FC = memo(() => {
       const hoje = new Date();
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-      
+
       switch (periodoFilter) {
         case 'mes-atual':
-          registros = registros.filter(r => {
+          filtered = filtered.filter(r => {
             const dataRegistro = new Date(r.data + 'T00:00:00');
             return dataRegistro >= inicioMes && dataRegistro <= fimMes;
           });
@@ -248,7 +285,7 @@ export const HorasProfessoresPage: React.FC = memo(() => {
         case 'ultimos-7-dias':
           const seteDiasAtras = new Date();
           seteDiasAtras.setDate(hoje.getDate() - 7);
-          registros = registros.filter(r => {
+          filtered = filtered.filter(r => {
             const dataRegistro = new Date(r.data + 'T00:00:00');
             return dataRegistro >= seteDiasAtras;
           });
@@ -256,7 +293,7 @@ export const HorasProfessoresPage: React.FC = memo(() => {
         case 'ultimos-30-dias':
           const trintaDiasAtras = new Date();
           trintaDiasAtras.setDate(hoje.getDate() - 30);
-          registros = registros.filter(r => {
+          filtered = filtered.filter(r => {
             const dataRegistro = new Date(r.data + 'T00:00:00');
             return dataRegistro >= trintaDiasAtras;
           });
@@ -264,65 +301,62 @@ export const HorasProfessoresPage: React.FC = memo(() => {
       }
     }
 
-    return registros.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [dadosMockados.registrosHorasProfessores, userLogado, unidadeSelecionada, searchTerm, professorFilter, tipoFilter, unidadeFilter, periodoFilter]);
+    return filtered.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [registros, searchTerm, professorFilter, tipoFilter, unidadeFilter, periodoFilter]);
 
   // Estatísticas
   const stats = useMemo(() => {
-    const registros = filteredRegistros;
-    const totalRegistros = registros.length;
-    const totalHoras = registros.reduce((sum, r) => sum + r.horasTrabalhadas, 0);
-    const professoresAtivos = new Set(registros.map(r => r.professorId)).size;
-    
+    const totalRegistros = filteredRegistros.length;
+    const totalHoras = filteredRegistros.reduce((sum, r) => sum + r.horasTrabalhadas, 0);
+    const professoresAtivos = new Set(filteredRegistros.map(r => r.professorId)).size;
+
     // Calcular valor total estimado
-   const valorTotal = registros.reduce((sum, registro) => {
-  const professor = dadosMockados.professores.find(p => p.id === registro.professorId);
-  if (!professor) return sum;
+    const valorTotal = filteredRegistros.reduce((sum, registro) => {
+      const professor = professores.find(p => p.id === registro.professorId);
+      if (!professor) return sum;
 
-  // Para aulão, usar valor específico se disponível (prioridade)
-  if (registro.tipoAtividade === 'aulao' && professor.valorAulao) {
-    return sum + professor.valorAulao;
-  }
+      // Para aulão, usar valor específico se disponível (prioridade)
+      if (registro.tipoAtividade === 'aulao' && professor.valorAulao) {
+        return sum + professor.valorAulao;
+      }
 
-  if (professor.tipoPagamento === 'fixo') {
-    // CORREÇÃO: Salário fixo não soma ao total de sessões
-    return sum;
-  } else if (professor.tipoPagamento === 'hora-fixa') {
-    // CORREÇÃO: Adicionar cálculo para hora fixa
-    return sum + (registro.horasTrabalhadas * (professor.valorHoraFixa || 0));
-  } else if (professor.tipoPagamento === 'horas-variaveis' && professor.valoresHoras) {
-    const horas = registro.horasTrabalhadas;
-    if (horas <= 1) {
-      return sum + (professor.valoresHoras.umaHora || 0);
-    } else if (horas <= 2) {
-      return sum + (professor.valoresHoras.duasHoras || 0);
-    } else {
-      return sum + (professor.valoresHoras.tresOuMaisHoras || 0);
-    }
-  }
+      if (professor.tipoPagamento === 'fixo') {
+        // CORREÇÃO: Salário fixo não soma ao total de sessões
+        return sum;
+      } else if (professor.tipoPagamento === 'hora-fixa') {
+        // CORREÇÃO: Adicionar cálculo para hora fixa
+        return sum + (registro.horasTrabalhadas * (professor.valorHoraFixa || 0));
+      } else if (professor.tipoPagamento === 'horas-variaveis' && professor.valoresHoras) {
+        const horas = registro.horasTrabalhadas;
+        if (horas <= 1) {
+          return sum + (professor.valoresHoras.umaHora || 0);
+        } else if (horas <= 2) {
+          return sum + (professor.valoresHoras.duasHoras || 0);
+        } else {
+          return sum + (professor.valoresHoras.tresOuMaisHoras || 0);
+        }
+      }
 
-  return sum;
-}, 0);
+      return sum;
+    }, 0);
 
     return { totalRegistros, totalHoras, professoresAtivos, valorTotal };
-  }, [filteredRegistros, dadosMockados.professores]);
+  }, [filteredRegistros, professores]);
 
   // Professores disponíveis para filtro
   const professoresDisponiveis = useMemo(() => {
-    let professores = dadosMockados.professores.filter(p => p.ativo);
-    
     if (userLogado?.perfil === 'gestor') {
       // Buscar registros da unidade para ver quais professores têm registro
       const professoresComRegistro = new Set(
-        dadosMockados.registrosHorasProfessores
+        registros
           .filter(r => r.unidade === unidadeSelecionada)
           .map(r => r.professorId)
       );
-      professores = professores.filter(p => professoresComRegistro.has(p.id));
+      return professores.filter(p => professoresComRegistro.has(p.id));
     }
-    
+
     return professores;
-  }, [dadosMockados.professores, dadosMockados.registrosHorasProfessores, userLogado, unidadeSelecionada]);
+  }, [professores, registros, userLogado, unidadeSelecionada]);
 
   // Handlers
   const handleNovoRegistro = useCallback(() => {
@@ -355,7 +389,7 @@ export const HorasProfessoresPage: React.FC = memo(() => {
     setShowModal(true);
   }, [canManage, addNotification]);
 
-  const handleDeleteRegistro = useCallback((id: number) => {
+  const handleDeleteRegistro = useCallback(async (id: number) => {
     if (!canManage) {
       addNotification({
         type: 'warning',
@@ -366,14 +400,24 @@ export const HorasProfessoresPage: React.FC = memo(() => {
     }
 
     if (confirm('Tem certeza que deseja excluir este registro de horas?')) {
-      setRegistrosHorasProfessores(prev => prev.filter(r => r.id !== id));
-      addNotification({
-        type: 'success',
-        title: 'Registro excluído',
-        message: 'O registro de horas foi removido com sucesso.'
-      });
+      try {
+        await registrosHorasProfessoresService.delete(id);
+        setRegistros(prev => prev.filter(r => r.id !== id));
+        addNotification({
+          type: 'success',
+          title: 'Registro excluído',
+          message: 'O registro de horas foi removido com sucesso.'
+        });
+      } catch (error) {
+        console.error('Erro ao excluir registro:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao excluir',
+          message: 'Não foi possível excluir o registro.'
+        });
+      }
     }
-  }, [canManage, setRegistrosHorasProfessores, addNotification]);
+  }, [canManage, addNotification]);
 
   const exportToCSV = useCallback(() => {
     try {
@@ -427,6 +471,19 @@ export const HorasProfessoresPage: React.FC = memo(() => {
           <p className="text-gray-600 dark:text-gray-400">
             Você não tem permissão para acessar o controle de horas.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Clock className="h-16 w-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Carregando registros...
+          </h3>
         </div>
       </div>
     );
@@ -615,7 +672,7 @@ export const HorasProfessoresPage: React.FC = memo(() => {
           </div>
         ) : (
           filteredRegistros.map(registro => {
-            const professor = dadosMockados.professores.find(p => p.id === registro.professorId);
+            const professor = professores.find(p => p.id === registro.professorId);
             return (
               <RegistroCard
                 key={registro.id}
@@ -634,10 +691,24 @@ export const HorasProfessoresPage: React.FC = memo(() => {
       {showModal && (
         <NovoRegistroHorasModal
           isOpen={showModal}
-          onClose={() => {
+          onClose={async () => {
             setShowModal(false);
             setSelectedRegistro(null);
             setIsEditing(false);
+
+            // Recarregar registros após criar/editar
+            try {
+              const params: any = {};
+              if (userLogado?.perfil === 'gestor') {
+                params.unidade_id = unidadeSelecionada;
+              } else if (userLogado?.perfil === 'professor') {
+                params.professor_id = userLogado.id;
+              }
+              const registrosData = await registrosHorasProfessoresService.getAll(params);
+              setRegistros(registrosData);
+            } catch (error) {
+              console.error('Erro ao recarregar registros:', error);
+            }
           }}
           editingRegistro={selectedRegistro}
           isEditing={isEditing}
