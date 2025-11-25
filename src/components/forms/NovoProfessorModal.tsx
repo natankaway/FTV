@@ -94,7 +94,7 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
         nome: editingProfessor.nome,
         telefone: editingProfessor.telefone,
         email: editingProfessor.email,
-        senha: editingProfessor.senha,
+        senha: '', // Senha vazia no modo de edição (opcional alterar)
         tipoPagamento: editingProfessor.tipoPagamento,
         valorFixo: editingProfessor.valorFixo || 0,
 		 valorHoraFixa: editingProfessor.valorHoraFixa || 0,
@@ -159,9 +159,10 @@ export const NovoProfessorModal: React.FC<NovoProfessorModalProps> = ({
       newErrors.email = 'Email inválido';
     }
 
-    if (!formData.senha.trim()) {
+    // Senha: obrigatória apenas ao criar, opcional ao editar
+    if (!editingProfessor && (!formData.senha || !formData.senha.trim())) {
       newErrors.senha = 'Senha é obrigatória';
-    } else if (formData.senha.length < 6) {
+    } else if (formData.senha && formData.senha.trim() && formData.senha.length < 6) {
       newErrors.senha = 'Senha deve ter pelo menos 6 caracteres';
     }
 

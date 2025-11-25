@@ -7,22 +7,26 @@ interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEleme
   'aria-describedby'?: string;
 }
 
-export const NumberInput: React.FC<NumberInputProps> = memo(({ 
-  label, 
-  error, 
-  required = false, 
+export const NumberInput: React.FC<NumberInputProps> = memo(({
+  label,
+  error,
+  required = false,
   id,
   className = '',
   'aria-describedby': ariaDescribedBy,
-  ...props 
+  value,
+  ...props
 }) => {
   const inputId = id || `number-input-${Math.random().toString(36).substr(2, 9)}`;
   const errorId = `${inputId}-error`;
 
+  // Fix NaN warning for number inputs
+  const sanitizedValue = (typeof value === 'number' && isNaN(value)) ? '' : value;
+
   return (
     <div className="space-y-2">
       {label && (
-        <label 
+        <label
           htmlFor={inputId}
           className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200"
         >
@@ -35,9 +39,10 @@ export const NumberInput: React.FC<NumberInputProps> = memo(({
         type="number"
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? errorId : ariaDescribedBy}
+        value={sanitizedValue}
         className={`w-full px-3 py-2 text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-          error 
-            ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+          error
+            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
             : ''
         } ${className}`}
         style={{

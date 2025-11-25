@@ -3,7 +3,8 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppState, useNotifications } from '@/contexts';
 import { Button, Input } from '@/components/common';
 import { X, Clock, User, MapPin, Calendar, Activity } from 'lucide-react';
-import type { RegistroHorasProfessor, RegistroHorasFormData, ModalProps } from '@/types';
+import type { RegistroHorasProfessor, RegistroHorasFormData, ModalProps, Professor } from '@/types';
+import { professoresService, registrosHorasProfessoresService } from '@/services';
 
 interface NovoRegistroHorasModalProps extends ModalProps {
   editingRegistro?: RegistroHorasProfessor | null;
@@ -20,15 +21,15 @@ interface FormErrors {
 
 const generateId = () => Math.floor(Math.random() * 1000000);
 
-export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({ 
-  isOpen, 
-  onClose, 
+export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({
+  isOpen,
+  onClose,
   editingRegistro,
-  isEditing = false 
+  isEditing = false
 }) => {
   const { dadosMockados, userLogado, unidadeSelecionada, setRegistrosHorasProfessores } = useAppState();
   const { addNotification } = useNotifications();
-  
+
   const [formData, setFormData] = useState<RegistroHorasFormData>({
     data: new Date().toISOString().split('T')[0], // Data atual
     professorId: 0,
@@ -37,9 +38,35 @@ export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({
     tipoAtividade: 'aula-regular',
     observacoes: ''
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [professores, setProfessores] = useState<Professor[]>([]);
+  const [isLoadingProfessores, setIsLoadingProfessores] = useState(false);
+
+  // Carregar professores do Supabase
+  useEffect(() => {
+    const loadProfessores = async () => {
+      if (!isOpen) return;
+
+      setIsLoadingProfessores(true);
+      try {
+        const data = await professoresService.getAll({ ativo: true });
+        setProfessores(data);
+      } catch (error) {
+        console.error('Erro ao carregar professores:', error);
+        addNotification({
+          type: 'error',
+          title: 'Erro ao carregar',
+          message: 'Não foi possível carregar a lista de professores'
+        });
+      } finally {
+        setIsLoadingProfessores(false);
+      }
+    };
+
+    loadProfessores();
+  }, [isOpen, addNotification]);
 
   // Carregar dados para edição
   useEffect(() => {
@@ -67,18 +94,11 @@ export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({
 
   // Professores disponíveis baseado no perfil
   const professoresDisponiveis = useMemo(() => {
-    let professores = dadosMockados.professores.filter(p => p.ativo);
-    
-    // Se for gestor, mostrar apenas professores que já tiveram registros na unidade
-    // ou todos os professores (para permitir novos registros)
-    if (userLogado?.perfil === 'gestor') {
-      // Para simplicidade, mostrar todos os professores ativos
-      // Em uma implementação real, poderia filtrar por unidade de atuação
-      return professores;
-    }
-    
+    // Todos os professores já vêm filtrados como ativos do banco
+    // Se for gestor, mostrar todos os professores ativos
+    // (poderá filtrar por unidade se necessário no futuro)
     return professores;
-  }, [dadosMockados.professores, userLogado]);
+  }, [professores]);
 
   // Unidades disponíveis baseado no perfil
   const unidadesDisponiveis = useMemo(() => {
@@ -124,20 +144,7 @@ export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({
       newErrors.unidade = 'Unidade é obrigatória';
     }
 
-    // Verificar duplicação (mesmo professor, mesma data, mesmo tipo)
-    if (!isEditing || (isEditing && editingRegistro)) {
-      const registroExistente = dadosMockados.registrosHorasProfessores.find(r => 
-        r.data === formData.data &&
-        r.professorId === formData.professorId &&
-        r.tipoAtividade === formData.tipoAtividade &&
-        r.unidade === formData.unidade &&
-        (!isEditing || r.id !== editingRegistro?.id)
-      );
-
-      if (registroExistente) {
-        newErrors.data = 'Já existe um registro para este professor nesta data e tipo de atividade';
-      }
-    }
+    // Nota: Verificação de duplicação pode ser feita no backend
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -160,38 +167,37 @@ export const NovoRegistroHorasModal: React.FC<NovoRegistroHorasModalProps> = ({
   }, [errors]);
 
   // Calcular valor estimado
- // Calcular valor estimado
-const valorEstimado = useMemo(() => {
-  if (!formData.professorId) return 0;
+  const valorEstimado = useMemo(() => {
+    if (!formData.professorId) return 0;
 
-  const professor = dadosMockados.professores.find(p => p.id === formData.professorId);
-  if (!professor) return 0;
+    const professor = professores.find(p => p.id === formData.professorId);
+    if (!professor) return 0;
 
-  // Para aulão, usar valor específico se disponível (prioridade)
-  if (formData.tipoAtividade === 'aulao' && professor.valorAulao) {
-    return professor.valorAulao;
-  }
-
-  if (professor.tipoPagamento === 'fixo') {
-    // CORREÇÃO: Salário fixo não mostra valor estimado por sessão
-    return 0;
-  } else if (professor.tipoPagamento === 'hora-fixa') {
-    // CORREÇÃO: Adicionar cálculo para hora fixa
-    return formData.horasTrabalhadas * (professor.valorHoraFixa || 0);
-  } else if (professor.tipoPagamento === 'horas-variaveis' && professor.valoresHoras) {
-    const horas = formData.horasTrabalhadas;
-    
-    if (horas <= 1) {
-      return professor.valoresHoras.umaHora || 0;
-    } else if (horas <= 2) {
-      return professor.valoresHoras.duasHoras || 0;
-    } else {
-      return professor.valoresHoras.tresOuMaisHoras || 0;
+    // Para aulão, usar valor específico se disponível (prioridade)
+    if (formData.tipoAtividade === 'aulao' && professor.valorAulao) {
+      return professor.valorAulao;
     }
-  }
 
-  return 0;
-}, [formData.professorId, formData.horasTrabalhadas, formData.tipoAtividade, dadosMockados.professores]);
+    if (professor.tipoPagamento === 'fixo') {
+      // CORREÇÃO: Salário fixo não mostra valor estimado por sessão
+      return 0;
+    } else if (professor.tipoPagamento === 'hora-fixa') {
+      // CORREÇÃO: Adicionar cálculo para hora fixa
+      return formData.horasTrabalhadas * (professor.valorHoraFixa || 0);
+    } else if (professor.tipoPagamento === 'horas-variaveis' && professor.valoresHoras) {
+      const horas = formData.horasTrabalhadas;
+
+      if (horas <= 1) {
+        return professor.valoresHoras.umaHora || 0;
+      } else if (horas <= 2) {
+        return professor.valoresHoras.duasHoras || 0;
+      } else {
+        return professor.valoresHoras.tresOuMaisHoras || 0;
+      }
+    }
+
+    return 0;
+  }, [formData.professorId, formData.horasTrabalhadas, formData.tipoAtividade, professores]);
 
   // Submissão do formulário
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -213,39 +219,28 @@ const valorEstimado = useMemo(() => {
     setIsSubmitting(true);
 
     try {
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const professorSelecionado = professores.find(p => p.id === formData.professorId);
 
-      const professorSelecionado = dadosMockados.professores.find(p => p.id === formData.professorId);
-      
-      const registroData: RegistroHorasProfessor = {
-        id: editingRegistro?.id || generateId(),
+      const registroData = {
         data: formData.data,
-        professorId: formData.professorId,
-        professorNome: professorSelecionado?.nome || 'Professor não encontrado',
-        unidade: formData.unidade,
-        horasTrabalhadas: formData.horasTrabalhadas,
-        tipoAtividade: formData.tipoAtividade,
-        observacoes: formData.observacoes,
-        registradoPor: userLogado.id,
-        registradoEm: editingRegistro?.registradoEm || new Date().toISOString(),
-        editadoPor: isEditing ? userLogado.id : undefined,
-        editadoEm: isEditing ? new Date().toISOString() : undefined
+        professor_id: formData.professorId,
+        unidade_id: formData.unidade,
+        horas_trabalhadas: formData.horasTrabalhadas,
+        tipo_atividade: formData.tipoAtividade,
+        observacoes: formData.observacoes || null
       };
 
       if (isEditing && editingRegistro) {
         // Atualizar registro existente
-        setRegistrosHorasProfessores(prev => 
-          prev.map(r => r.id === editingRegistro.id ? registroData : r)
-        );
+        await registrosHorasProfessoresService.update(editingRegistro.id, registroData);
         addNotification({
           type: 'success',
           title: 'Registro atualizado',
           message: 'As horas do professor foram atualizadas com sucesso!'
         });
       } else {
-        // Adicionar novo registro
-        setRegistrosHorasProfessores(prev => [...prev, registroData]);
+        // Criar novo registro
+        await registrosHorasProfessoresService.create(registroData);
         addNotification({
           type: 'success',
           title: 'Horas registradas',
@@ -254,7 +249,7 @@ const valorEstimado = useMemo(() => {
       }
 
       onClose();
-      
+
     } catch (error) {
       console.error('Erro ao salvar registro:', error);
       addNotification({
@@ -265,7 +260,7 @@ const valorEstimado = useMemo(() => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, userLogado, isEditing, editingRegistro, dadosMockados.professores, setRegistrosHorasProfessores, addNotification, onClose]);
+  }, [formData, validateForm, userLogado, isEditing, editingRegistro, professores, addNotification, onClose]);
 
   if (!isOpen) return null;
 
